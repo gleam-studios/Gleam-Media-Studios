@@ -4,43 +4,43 @@
 
 作为主控 Agent，你必须严格按照以下顺序与逻辑调用系统文件（路径相对本 Agent 包根目录）：
 
-1. **常驻底层 (`agent/prompts/main-agent-role.md` + `agent/prompts/rule.md`)**
+1. **常驻底层 (`agent/script-agent/prompts/main-agent-role.md` + `agent/script-agent/prompts/rule.md`)**
   - 全局运行。
   - 持续过滤 AI 味、解释腔、工具人对白、无效铺垫、弱冲突、无卡点推进。
   - 保证所有输出始终服务于“海外女性向 BL 商业短剧”的目标。
-2. **阶段一核心 (`agent/templates/Synopsis Template.md`)**
+2. **阶段一核心 (`agent/script-agent/templates/Synopsis Template.md`)**
   - 严格按模板小节输出（一句话梗概 + 完整大纲各块 + **本剧角色**），**尤其写满「项目定位」含总集数与单集时长**。
   - **「本剧角色」段（`## 本剧角色`）**：须列出全部主角与配角，**推荐**与后续设定集对齐，使用 `**@主称谓（中文名） —— 一句话定位`**（全角括号；主角/配角分开列）。此清单为 STAGE 2 角色小传数量的唯一锚点，禁止遗漏任何角色。
   - 目标是提炼卖点、压缩冲突、建立关系钩子，而不是先追求文采。
-3. **阶段二核心 (`agent/templates/Characters Template.md`)**
+3. **阶段二核心 (`agent/script-agent/templates/Characters Template.md`)**
   - 处理核心人物小传时，严格按模板：**核心关系定义 + 人物矩阵** → **主角一 / 主角二（`## 主角一`…）** → **配角一、配角二…（`## 配角一`…，与主角同级）**；每人交稿五项：**人设、定位、特征、性格、剧情里的发展路线**。
   - 后台推演仍可内化欲望、防御、触发器与权力差，但须**折叠写入**上述五项，不得要求用户填旧版十几字段表。
-4. **阶段三核心 (`agent/templates/Three-Act Structure Template.md`)**
+4. **阶段三核心 (`agent/script-agent/templates/Three-Act Structure Template.md`)**
   - 按模板三幕结构输出，并遵守文首**体量锚定**（对齐 STAGE 1 总集数；第二幕须多集级加压）。
   - 目标是构建递进式结构，而不是平铺剧情。
-5. **阶段四核心 (`agent/templates/Key Events Template.md`)**
+5. **阶段四核心 (`agent/script-agent/templates/Key Events Template.md`)**
   - 按模板字段输出硬事件；**按需续编 `## 核心事件 N` 或分批交付**，直至覆盖三幕节拍并匹配总集数拆分，不得以示例条数为上限。
   - **集数范围（硬规则）**：每个事件必须标注 `集数范围：第X集 ~ 第Y集`，区间连续无间隔覆盖全部集数。STAGE 6 将按此分批输出。
   - 目标是提炼真正推动关系与剧情的硬事件链，并锁定每段剧情对应的集数区间。
-6. **阶段五核心 (`agent/templates/Settings Template.md`)**
+6. **阶段五核心 (`agent/script-agent/templates/Settings Template.md`)**
   - 从 STAGE 1-4 产物中提取全部资产（人物/物品/场景），以 `∆分类` + `**@主称谓（中文名）`** 格式注册为全局资产表（全角括号，三类统一）。
   - 目标是建立 STAGE 6/7 的唯一资产引用源，确保下游自动识别无歧义。
-7. **阶段六核心 (`agent/templates/Episode Outline Template.md`)**
+7. **阶段六核心 (`agent/script-agent/templates/Episode Outline Template.md`)**
   - 为每集输出结构化大纲，每集以 `## 第N集` 开头（禁止合并集数），行内列出 `∆场景/∆人物/∆物品`（**完整 `@主称谓（中文名）` 串**）、`开头钩子：`、`本集剧情：`（至少 3-5 句完整概括）、`结尾悬念：`。
   - **全文 @引用**：开头钩子、本集剧情、结尾悬念正文中每次提到资产也必须带**与设定集相同的完整 `@主称谓（中文名）` 串**，裸写或半角括号视为格式违规。
   - **断行与分隔**：每集内各字段各占一行，每集结束后用 `---` 分隔线隔开下一集。
   - **事件批次驱动**：按 STAGE 4 核心事件的集数范围分批输出（自动流水线），每批对应一个事件。
 8. **阶段七核心**
-  - **默认**：`agent/templates/Episode Development Script Template.md` — **单集概述 + `正文：` 下单块时间线正文**，遵守一集一轮；**禁止**场次/幕分级与镜头术语；概述含 `∆场景 / ∆出场人物 / ∆出场物品` 等；正文须 `**@主称谓（中文名）`**、禁止模糊代词；台词 **英语 + 句末（中文翻译）**，句前括号情绪/表演，标明 `**@角色主称谓（中文名）`**。
-  - **交付版**：仅当主创明确索要 **交付版 / 成品版 / 精简版 / 可直接给下游的版本**（或同义表述）时，改用 `agent/templates/Episode Final Script Template.md`；**同一结构（概述 + 正文）**。**禁止**在同一轮输出中混用两套模板语义。
+  - **默认**：`agent/script-agent/templates/Episode Development Script Template.md` — **单集概述 + `正文：` 下单块时间线正文**，遵守一集一轮；**禁止**场次/幕分级与镜头术语；概述含 `∆场景 / ∆出场人物 / ∆出场物品` 等；正文须 `**@主称谓（中文名）`**、禁止模糊代词；台词 **英语 + 句末（中文翻译）**，句前括号情绪/表演，标明 `**@角色主称谓（中文名）`**。
+  - **交付版**：仅当主创明确索要 **交付版 / 成品版 / 精简版 / 可直接给下游的版本**（或同义表述）时，改用 `agent/script-agent/templates/Episode Final Script Template.md`；**同一结构（概述 + 正文）**。**禁止**在同一轮输出中混用两套模板语义。
 9. **短剧规格知识库、工作流与工具（仓库根目录，相对项目根）**
-  - **体量、节奏、里程碑、钩子/集尾规则、声线原则、合规占位**：以 `knowledge/01_EPISODE_SPECS.md`～`knowledge/07_PLATFORM_SAFE.md` 为准（**已由系统提示注入**；`knowledge/00_README.md` 为人类说明不注入）。
-  - **可重复工作流**：`skills/*.md`（含 `skills/00_INDEX.md`）**已由系统提示注入**；按任务选用对应 `skill-*.md`，与阶段七模板、`agent/prompts/main_prompt.md` §1 **[D][H]** 对齐。
+  - **体量、节奏、里程碑、钩子/集尾规则、声线原则、合规占位**：以 `agent/script-agent/knowledge/01_EPISODE_SPECS.md`～`agent/script-agent/knowledge/07_PLATFORM_SAFE.md` 为准（**已由系统提示注入**；`agent/script-agent/knowledge/00_README.md` 为人类说明不注入）。
+  - **可重复工作流**：`agent/script-agent/skills/*.md`（含 `agent/script-agent/skills/00_INDEX.md`）**已由系统提示注入**；按任务选用对应 `skill-*.md`，与阶段七模板、`agent/script-agent/prompts/main_prompt.md` §1 **[D][H]** 对齐。
   - **体量与集尾列表辅助**：`tools/episode-stats.mjs`、`tools/hook-tail-list.mjs`（启发式，非解析器；供本地/主创自检）。
 
 ## 0.5 子 Agent 执行说明 (Sub-Agent Execution)
 
-调度分层、触发场景与纪律见 `**agent/prompts/main_prompt.md` §1.5**。执行时：结构压缩、爆点重排、反转、事件链、分集节奏等仍按本 `skill.md` 模块落实；**先规划后动笔**内化 `agent/prompts/script-planning-agent-role.md`；对白类问题内化 `agent/prompts/lines-agent-role.md`；**STAGE 7 英语对白**另须内化 `agent/prompts/english-lines-agent-role.md` 与 `skills/skill-english-dialogue-localization.md`（侧栏 Locale 简报）；由主控合并，局部对白修改仍遵守 `agent/prompts/flowchart.md`「对白局部修正分支」。
+调度分层、触发场景与纪律见 `**agent/script-agent/prompts/main_prompt.md` §1.5**。执行时：结构压缩、爆点重排、反转、事件链、分集节奏等仍按本 `skill.md` 模块落实；**先规划后动笔**内化 `agent/script-agent/prompts/script-planning-agent-role.md`；对白类问题内化 `agent/script-agent/prompts/lines-agent-role.md`；**STAGE 7 英语对白**另须内化 `agent/script-agent/prompts/english-lines-agent-role.md` 与 `agent/script-agent/skills/skill-english-dialogue-localization.md`（侧栏 Locale 简报）；由主控合并，局部对白修改仍遵守 `agent/script-agent/prompts/flowchart.md`「对白局部修正分支」。
 
 ---
 
@@ -149,9 +149,9 @@
 
 ### STAGE 2 分步与体量（人物阶段执行须知）
 
-- **同一 STAGE 2 内分三轮交付**：先 **核心关系定义 + 人物矩阵总览**，再 **主角一 / 主角二逐个**（默认一轮一人），最后 **配角分批**（每轮 1～3 人，每人 `**## 配角N`** 一节，五项与主角同；勿仅以姓名起段）。流程定义见 `agent/prompts/flowchart.md` §2.4。
+- **同一 STAGE 2 内分三轮交付**：先 **核心关系定义 + 人物矩阵总览**，再 **主角一 / 主角二逐个**（默认一轮一人），最后 **配角分批**（每轮 1～3 人，每人 `**## 配角N`** 一节，五项与主角同；勿仅以姓名起段）。流程定义见 `agent/script-agent/prompts/flowchart.md` §2.4。
 - **30～60 集** 项目：矩阵须列出足够配角与阶段性人物，并标注功能与预计集区间；不得只给极少数角色冒充长剧卡司。
-- **人设国籍**：默认海外本地化（非华裔为常态），除非主创明确要求华语/中国语境；见 `agent/prompts/rule.md` §6.1。
+- **人设国籍**：默认海外本地化（非华裔为常态），除非主创明确要求华语/中国语境；见 `agent/script-agent/prompts/rule.md` §6.1。
 
 ### 4. 双男主关系建模器 (Dual-Lead Relationship Engine)
 
@@ -371,7 +371,7 @@
 - 结构为 `**## 第N集：《标题》` → 概述字段 → `---` → `正文：` → 单块时间线叙事**。**禁止**场次/幕分级与镜头编号、景别、机位、时间段标签。
 - **正文**须饱满：动作、表情、事件推进、对白融在连续叙事里；结尾用台词/动作/表情落在集尾卡点。
 - **台词**：本地化 **英语**，句末 **（中文翻译）**；句前括号写情绪/表演；标明 `**@角色主称谓（中文名）`**。**禁止**他/她/它等模糊代词；资产一律 `**@主称谓（中文名）`** 全串。
-- **英语语体**：须服从工程注入中的 **英语 Locale 简报** 与 `skills/skill-english-dialogue-localization.md`，**禁止 Chinglish**；简报缺失时勿编造地域习惯，须请主创在 Studio 先生成简报。
+- **英语语体**：须服从工程注入中的 **英语 Locale 简报** 与 `agent/script-agent/skills/skill-english-dialogue-localization.md`，**禁止 Chinglish**；简报缺失时勿编造地域习惯，须请主创在 Studio 先生成简报。
 
 ---
 

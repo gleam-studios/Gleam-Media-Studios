@@ -7,8 +7,8 @@
 ## 输入
 
 - 最近 **N 集** 正文或开发版（建议含「本集剧情摘要」字段若存在）。
-- `knowledge/03_SERIES_BIBLE.md` 中的铁律与里程碑摘要。
-- `agent/context_assets/character_reference.md` 中的称谓与禁忌摘要。
+- `agent/script-agent/knowledge/03_SERIES_BIBLE.md` 中的铁律与里程碑摘要。
+- `agent/script-agent/context_assets/character_reference.md` 中的称谓与禁忌摘要。
 
 ## 步骤
 
@@ -20,9 +20,9 @@
 
 ## 引用 knowledge
 
-- `knowledge/03_SERIES_BIBLE.md`
-- `knowledge/04_HOOK_LEXICON.md`
-- `knowledge/05_CLIFFHANGER_RULES.md`
+- `agent/script-agent/knowledge/03_SERIES_BIBLE.md`
+- `agent/script-agent/knowledge/04_HOOK_LEXICON.md`
+- `agent/script-agent/knowledge/05_CLIFFHANGER_RULES.md`
 
 ## 输出格式
 

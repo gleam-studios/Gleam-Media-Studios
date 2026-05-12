@@ -2,7 +2,7 @@
 
 ## 与 `character_reference.md` 的分工
 
-- **具体角色**：姓名、口癖、称谓、禁忌词、双人互动习惯 → `**agent/context_assets/character_reference.md`**（权威来源）。
+- **具体角色**：姓名、口癖、称谓、禁忌词、双人互动习惯 → `**agent/script-agent/context_assets/character_reference.md`**（权威来源）。
 - **本文件**：短剧写作**通用原则**，避免与 `character_reference` 重复逐条人设。
 
 ## 短剧辨识度原则

@@ -8,8 +8,8 @@
 ## 输入
 
 - 一句话梗概 / 详细梗概 / 关键事件草案（任一或可组合）。
-- 目标受众与类型约束（沿用 `agent/prompts/main-agent-role.md` / `skill.md`）。
-- （可选）已填的 `knowledge/03_SERIES_BIBLE.md` 草稿。
+- 目标受众与类型约束（沿用 `agent/script-agent/prompts/main-agent-role.md` / `skill.md`）。
+- （可选）已填的 `agent/script-agent/knowledge/03_SERIES_BIBLE.md` 草稿。
 
 ## 步骤
 
@@ -21,9 +21,9 @@
 
 ## 引用 knowledge
 
-- `knowledge/01_EPISODE_SPECS.md`（单集体量与轮次规则）
-- `knowledge/03_SERIES_BIBLE.md`（铁律、里程碑表、阶段区间）
-- `knowledge/02_SHORTFORM_PACING.md`（中弧与小高潮间隔）
+- `agent/script-agent/knowledge/01_EPISODE_SPECS.md`（单集体量与轮次规则）
+- `agent/script-agent/knowledge/03_SERIES_BIBLE.md`（铁律、里程碑表、阶段区间）
+- `agent/script-agent/knowledge/02_SHORTFORM_PACING.md`（中弧与小高潮间隔）
 
 ## 输出格式
 

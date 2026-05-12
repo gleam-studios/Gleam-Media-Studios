@@ -27,7 +27,7 @@
 
 4. **自检（静默）**  
    - 每条英语是否可读作 **母语者在该设定下** 会说的话？  
-   - 是否出现典型 Chinglish（见 `agent/prompts/english-lines-agent-role.md`）？
+   - 是否出现典型 Chinglish（见 `agent/script-agent/prompts/english-lines-agent-role.md`）？
 
 ## 《英语 Locale 简报》输出模板（Markdown，固定小节）
 
@@ -59,7 +59,7 @@
 
 ## 引用 knowledge
 
-- 体量与对白节奏：`knowledge/01_EPISODE_SPECS.md`（不替代本 skill 的语体规则）。
+- 体量与对白节奏：`agent/script-agent/knowledge/01_EPISODE_SPECS.md`（不替代本 skill 的语体规则）。
 
 ## 完成标准
 

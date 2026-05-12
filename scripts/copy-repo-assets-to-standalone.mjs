@@ -11,7 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(__dirname, "..");
 const standaloneRoot = path.join(repoRoot, ".next", "standalone");
 
-const DIRS = ["agent", "knowledge", "skills"];
+const DIRS = ["agent"];
 
 if (!fs.existsSync(standaloneRoot)) {
   console.warn(`[copy-repo-assets-to-standalone] skip: ${standaloneRoot} missing (no standalone build?)`);

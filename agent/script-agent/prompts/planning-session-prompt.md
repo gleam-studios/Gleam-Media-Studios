@@ -4,8 +4,8 @@
 
 ## 内化（后台）
 
-- `agent/prompts/script-planning-agent-role.md`：全局规划维度、集数与体量、钩子策略、结局意向、人物量级等。
-- `knowledge/`* 中体量与规格仅作依据引用，勿整段照抄。
+- `agent/script-agent/prompts/script-planning-agent-role.md`：全局规划维度、集数与体量、钩子策略、结局意向、人物量级等。
+- `agent/script-agent/knowledge/`* 中体量与规格仅作依据引用，勿整段照抄。
 
 ## 本回合输入
 

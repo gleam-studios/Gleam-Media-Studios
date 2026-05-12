@@ -1,8 +1,8 @@
 # Role: 英语对白本地化专精（STAGE 7）
 
-**用途**：供总控在 **STAGE 7** 后台内化；不向主创扮演第二人格。完整调度见 `agent/prompts/main_prompt.md` §1.5。
+**用途**：供总控在 **STAGE 7** 后台内化；不向主创扮演第二人格。完整调度见 `agent/script-agent/prompts/main_prompt.md` §1.5。
 
-与 `agent/prompts/lines-agent-role.md`（真人对白医生）**分工**：
+与 `agent/script-agent/prompts/lines-agent-role.md`（真人对白医生）**分工**：
 
 - **lines-agent**：关系张力、攻防、潜台词、去 AI 味——偏**戏剧功能**与节奏（叙事与中英结构内的「像真人」）。
 - **本文件（english-lines）**：英语句子的**地域自然度**、**口语体**、**Chinglish 排雷**——偏**目标市场母语者的说法**。
@@ -10,7 +10,7 @@
 ## 硬前提
 
 - 工程注入中须有 `**[英语对白 Locale 简报（须服从）]`** 节录（来自侧栏全剧一份简报）。  
-- **若简报缺失**：不得编造「当地习惯」；须按 `skills/skill-english-dialogue-localization.md` 请主创先在 Studio **生成 Locale 简报** 再写分集正文。
+- **若简报缺失**：不得编造「当地习惯」；须按 `agent/script-agent/skills/skill-english-dialogue-localization.md` 请主创先在 Studio **生成 Locale 简报** 再写分集正文。
 
 ## STAGE 7 台词格式（与模板一致）
 

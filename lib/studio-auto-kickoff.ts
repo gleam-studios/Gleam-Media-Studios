@@ -30,13 +30,13 @@ export const STUDIO_AUTO_STAGE_USER_MESSAGE: Record<1 | 2 | 3 | 4 | 5 | 6 | 7, s
   ].join(""),
   5: [
     "请作为编剧助理，在严格服从【工程注入】与侧栏「系列圣经」的前提下，",
-    "基于 STAGE 1-4 已确认产物，按 `agent/prompts/generate-settings.md` 的规则，",
+    "基于 STAGE 1-4 已确认产物，按 `agent/script-agent/prompts/generate-settings.md` 的规则，",
     "直接输出 STAGE 5「设定集」模板交付物：以 ∆人物/∆物品/∆场景 分类，每个资产**一律** `@主称谓（中文名）` 注册（全角括号，人物/物品/场景同一格式；括号内仅中文，禁止省略），",
     "从前四阶段中提取全部人物、关键物品和场景地点，结构完整；无需我先发言或反问。",
   ].join(""),
   6: [
     "请作为编剧助理，在严格服从【工程注入】与侧栏「系列圣经」的前提下，",
-    "基于 STAGE 5 设定集与前序产物，按 `agent/templates/Episode Outline Template.md` 模板，",
+    "基于 STAGE 5 设定集与前序产物，按 `agent/script-agent/templates/Episode Outline Template.md` 模板，",
     "直接输出 STAGE 6「分集大纲」模板交付物。硬规则：",
     "① 每集独立 `## 第N集` 块，禁止合并集数（如「11-15集」）；",
     "② 每集行内列出 ∆场景/@名称、∆人物/@名称、∆物品/@名称、开头钩子：、本集剧情：、结尾悬念：；",
@@ -47,7 +47,7 @@ export const STUDIO_AUTO_STAGE_USER_MESSAGE: Record<1 | 2 | 3 | 4 | 5 | 6 | 7, s
   7: [
     "请作为编剧助理，在严格服从【工程注入】与侧栏「系列圣经」的前提下，",
     "基于已定事件链、设定集和分集大纲，直接输出 STAGE 7「分集剧本」：",
-    "严格按 `agent/templates/Episode Development Script Template.md`——每集仅一个 `## 第N集：《标题》`，",
+    "严格按 `agent/script-agent/templates/Episode Development Script Template.md`——每集仅一个 `## 第N集：《标题》`，",
     "填写概述字段（本集剧情核心、本集情绪走向、时长、∆场景、∆出场人物、∆出场物品、本集主钩子、本集集尾卡点类型），",
     "然后 `---`，再 `正文：`，**正文为单块时间线叙事**（禁止场次/幕/镜头术语/时间段标签）。",
     "禁止他/她/它等模糊代词；场景/人物/物品一律 @名称，与设定集一致。",

@@ -84,7 +84,7 @@ export function analyzeEpisodeMarkdown(
 
   const warnings: string[] = [];
   if (minActs > 0 && actHeadingsCount < minActs) {
-    warnings.push(`「#### 幕」共 ${actHeadingsCount} 个，低于建议下限 ${minActs}（见 knowledge/01_EPISODE_SPECS）`);
+    warnings.push(`「#### 幕」共 ${actHeadingsCount} 个，低于建议下限 ${minActs}（见 agent/script-agent/knowledge/01_EPISODE_SPECS）`);
   }
   if (dialogueChars > maxChars) {
     warnings.push(`关键对白区汉字约 ${dialogueChars}，超过常见上限参考 ${maxChars}（可随项目调整）`);

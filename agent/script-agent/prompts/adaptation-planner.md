@@ -4,7 +4,7 @@
 
 ## 内化
 
-- 与 `agent/prompts/script-planning-agent-role.md` 的规划维度对齐：集数与体量、钩子、人物量级、结局意向、重大节点等。
+- 与 `agent/script-agent/prompts/script-planning-agent-role.md` 的规划维度对齐：集数与体量、钩子、人物量级、结局意向、重大节点等。
 - 改编场景下须点明**压缩与重构策略**，但仍不写分集剧本正文。
 
 ## 你必须做的事

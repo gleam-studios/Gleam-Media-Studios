@@ -3,7 +3,7 @@ import path from "path";
 import { resolveAgentRoot } from "./agent-paths";
 
 const AGENT_ROOT = resolveAgentRoot();
-const AGENT_ASSETS_ROOT = path.join(AGENT_ROOT, "agent");
+const SCRIPT_AGENT_ROOT = path.join(AGENT_ROOT, "agent", "script-agent");
 
 const ORDERED_FILES = [
   "prompts/main_prompt.md",
@@ -18,13 +18,17 @@ const ORDERED_FILES = [
   "context_assets/character_reference.md",
 ];
 
-const TEMPLATES_DIR = path.join(AGENT_ASSETS_ROOT, "templates");
-const KNOWLEDGE_DIR = path.join(AGENT_ROOT, "knowledge");
-const SKILLS_DIR = path.join(AGENT_ROOT, "skills");
+const TEMPLATES_DIR = path.join(SCRIPT_AGENT_ROOT, "templates");
+const KNOWLEDGE_DIR = path.join(SCRIPT_AGENT_ROOT, "knowledge");
+const SKILLS_DIR = path.join(SCRIPT_AGENT_ROOT, "skills");
 const KNOWLEDGE_EXCLUDE = new Set(["00_README.md"]);
 
+function scriptAgentFile(relPath: string): string {
+  return `agent/script-agent/${relPath}`;
+}
+
 function readFile(relPath: string): string {
-  const abs = path.join(AGENT_ASSETS_ROOT, relPath);
+  const abs = path.join(SCRIPT_AGENT_ROOT, relPath);
   try {
     return fs.readFileSync(abs, "utf-8");
   } catch {
@@ -39,7 +43,7 @@ function readTemplates(): string {
     return files
       .map((f) => {
         const content = fs.readFileSync(path.join(TEMPLATES_DIR, f), "utf-8");
-        return `\n---\n<!-- template: ${f} -->\n${content}`;
+        return `\n---\n<!-- template: ${scriptAgentFile(`templates/${f}`)} -->\n${content}`;
       })
       .join("\n");
   } catch {
@@ -57,7 +61,7 @@ function readKnowledge(): string {
     return files
       .map((f) => {
         const content = fs.readFileSync(path.join(KNOWLEDGE_DIR, f), "utf-8");
-        return `<!-- file: knowledge/${f} -->\n${content}`;
+        return `<!-- file: agent/script-agent/knowledge/${f} -->\n${content}`;
       })
       .join("\n\n");
   } catch {
@@ -75,7 +79,7 @@ function readSkills(): string {
     return files
       .map((f) => {
         const content = fs.readFileSync(path.join(SKILLS_DIR, f), "utf-8");
-        return `<!-- file: skills/${f} -->\n${content}`;
+        return `<!-- file: agent/script-agent/skills/${f} -->\n${content}`;
       })
       .join("\n\n");
   } catch {
@@ -97,9 +101,9 @@ export function loadPlanningSessionPrompt(): string {
   if (planningCached) return planningCached;
   const parts: string[] = [];
   const p1 = readFile("prompts/planning-session-prompt.md");
-  if (p1) parts.push(`<!-- file: prompts/planning-session-prompt.md -->\n${p1}`);
+  if (p1) parts.push(`<!-- file: ${scriptAgentFile("prompts/planning-session-prompt.md")} -->\n${p1}`);
   const p2 = readFile("prompts/script-planning-agent-role.md");
-  if (p2) parts.push(`<!-- file: prompts/script-planning-agent-role.md -->\n${p2}`);
+  if (p2) parts.push(`<!-- file: ${scriptAgentFile("prompts/script-planning-agent-role.md")} -->\n${p2}`);
   planningCached = parts.join("\n\n");
   return planningCached;
 }
@@ -108,7 +112,7 @@ export function loadPlanningSessionPrompt(): string {
 export function loadAdaptationAnalyzePrompt(): string {
   if (adaptationAnalyzeCached) return adaptationAnalyzeCached;
   const p = readFile("prompts/adaptation-analyze.md");
-  adaptationAnalyzeCached = p ? `<!-- file: prompts/adaptation-analyze.md -->\n${p}` : "";
+  adaptationAnalyzeCached = p ? `<!-- file: ${scriptAgentFile("prompts/adaptation-analyze.md")} -->\n${p}` : "";
   return adaptationAnalyzeCached;
 }
 
@@ -116,7 +120,7 @@ export function loadAdaptationAnalyzePrompt(): string {
 export function loadAdaptationDiscussPrompt(): string {
   if (adaptationDiscussCached) return adaptationDiscussCached;
   const p = readFile("prompts/adaptation-discuss.md");
-  adaptationDiscussCached = p ? `<!-- file: prompts/adaptation-discuss.md -->\n${p}` : "";
+  adaptationDiscussCached = p ? `<!-- file: ${scriptAgentFile("prompts/adaptation-discuss.md")} -->\n${p}` : "";
   return adaptationDiscussCached;
 }
 
@@ -125,9 +129,9 @@ export function loadAdaptationPlannerPrompt(): string {
   if (adaptationPlannerCached) return adaptationPlannerCached;
   const parts: string[] = [];
   const p1 = readFile("prompts/adaptation-planner.md");
-  if (p1) parts.push(`<!-- file: prompts/adaptation-planner.md -->\n${p1}`);
+  if (p1) parts.push(`<!-- file: ${scriptAgentFile("prompts/adaptation-planner.md")} -->\n${p1}`);
   const p2 = readFile("prompts/script-planning-agent-role.md");
-  if (p2) parts.push(`<!-- file: prompts/script-planning-agent-role.md -->\n${p2}`);
+  if (p2) parts.push(`<!-- file: ${scriptAgentFile("prompts/script-planning-agent-role.md")} -->\n${p2}`);
   adaptationPlannerCached = parts.join("\n\n");
   return adaptationPlannerCached;
 }
@@ -136,7 +140,7 @@ export function loadAdaptationPlannerPrompt(): string {
 export function loadSeriesBibleGeneratorPrompt(): string {
   if (seriesBibleGeneratorCached) return seriesBibleGeneratorCached;
   const p = readFile("prompts/generate-series-bible.md");
-  seriesBibleGeneratorCached = p ? `<!-- file: prompts/generate-series-bible.md -->\n${p}` : "";
+  seriesBibleGeneratorCached = p ? `<!-- file: ${scriptAgentFile("prompts/generate-series-bible.md")} -->\n${p}` : "";
   return seriesBibleGeneratorCached;
 }
 
@@ -144,7 +148,7 @@ export function loadSeriesBibleGeneratorPrompt(): string {
 export function loadPrefillMetaPrompt(): string {
   if (prefillMetaCached) return prefillMetaCached;
   const p = readFile("prompts/prefill-meta.md");
-  prefillMetaCached = p ? `<!-- file: prompts/prefill-meta.md -->\n${p}` : "";
+  prefillMetaCached = p ? `<!-- file: ${scriptAgentFile("prompts/prefill-meta.md")} -->\n${p}` : "";
   return prefillMetaCached;
 }
 
@@ -156,7 +160,7 @@ export function loadSystemPrompt(): string {
   for (const rel of ORDERED_FILES) {
     const content = readFile(rel);
     if (content) {
-      parts.push(`<!-- file: ${rel} -->\n${content}`);
+      parts.push(`<!-- file: ${scriptAgentFile(rel)} -->\n${content}`);
     }
   }
 

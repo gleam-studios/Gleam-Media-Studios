@@ -1,6 +1,6 @@
 # Episode Development Script Template
 
-> **定位**：编剧室开发版分集模板。每集由 **概述区（头信息）** + **单块正文** 构成，用于 STAGE 7 **默认**输出。交付版见 `agent/templates/Episode Final Script Template.md`（与本文不得混用于同一轮输出）。
+> **定位**：编剧室开发版分集模板。每集由 **概述区（头信息）** + **单块正文** 构成，用于 STAGE 7 **默认**输出。交付版见 `agent/script-agent/templates/Episode Final Script Template.md`（与本文不得混用于同一轮输出）。
 >
 > **单次使用范围（硬规则）**：**每一次** Agent 回复**只准输出「一集」**（仅一个 `## 第[集数]集`）。下一集须在主创确认后的下一轮再输出。
 >

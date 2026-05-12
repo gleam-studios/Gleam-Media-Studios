@@ -2,18 +2,18 @@
 
 ## 适用范围
 
-- **总集数**：常见 **30～60 集**，以项目为准可变；写作前先定主线里程碑，再反推集数（见 `03_SERIES_BIBLE.md`、`skills/skill-series-architecture.md`）。
+- **总集数**：常见 **30～60 集**，以项目为准可变；写作前先定主线里程碑，再反推集数（见 `03_SERIES_BIBLE.md`、`agent/script-agent/skills/skill-series-architecture.md`）。
 - **单集时长**：**1～2 分钟**（成片）；剧本侧以**对白字数 + 动作密度**控制体量。
 
 ## 与模板的一致性（硬规则）
 
-- 每一轮回复**只输出一集**，遵守 `agent/templates` 顶部说明：仅一个 `## 第[集数]集` 块。
-- **开发版**默认：`agent/templates/Episode Development Script Template.md`（**概述区 + `正文：` 下单块时间线正文**）。
-- **交付版**：仅当主创明确索要交付/成品/精简/可下游版本时，使用 `agent/templates/Episode Final Script Template.md`（**同一语义：概述 + 正文**）；**禁止**同轮混用两套模板。
+- 每一轮回复**只输出一集**，遵守 `agent/script-agent/templates` 顶部说明：仅一个 `## 第[集数]集` 块。
+- **开发版**默认：`agent/script-agent/templates/Episode Development Script Template.md`（**概述区 + `正文：` 下单块时间线正文**）。
+- **交付版**：仅当主创明确索要交付/成品/精简/可下游版本时，使用 `agent/script-agent/templates/Episode Final Script Template.md`（**同一语义：概述 + 正文**）；**禁止**同轮混用两套模板。
 
 ## STAGE 7 单集结构（与主控协议一致）
 
-与 `agent/prompts/main_prompt.md` §1 **[D]**、两套分集模板顶部硬规则一致：
+与 `agent/script-agent/prompts/main_prompt.md` §1 **[D]**、两套分集模板顶部硬规则一致：
 
 - **层级**：仅 **`## 第N集：《标题》`** → 概述字段 → **`---`** → **`正文：`** → 正文全文。**禁止** `### 场次` / `#### 幕`。
 - **概述区字段**：`本集剧情核心` / `本集情绪走向` / `时长` / `∆场景` / `∆出场人物` / `∆出场物品` / `本集主钩子` / `本集集尾卡点类型`（与模板一致）。

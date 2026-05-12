@@ -61,7 +61,7 @@ export interface Project {
   currentStage: number;
   messages: Message[];
   artifacts: Artifact[];
-  /** 项目级系列圣经（设定真源，与全局 knowledge/03 模板区分） */
+  /** 项目级系列圣经（设定真源，与全局 agent/script-agent/knowledge/03 模板区分） */
   seriesBible?: string;
   /** 工程侧已验收的最高阶段（0 表示尚未确认） */
   maxApprovedStage?: number;

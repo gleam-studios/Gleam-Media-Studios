@@ -117,7 +117,7 @@ export default function WattpadPage() {
     setLogLines((prev) => [...prev, localizeLogLine(line)]);
   }, []);
 
-  const stories = payload?.stories ?? [];
+  const stories = useMemo(() => payload?.stories ?? [], [payload?.stories]);
 
   const previewStory = useMemo(() => {
     if (!stories.length) return null;
@@ -125,6 +125,7 @@ export default function WattpadPage() {
     const idx = indices.length ? indices[0] : 0;
     return stories[idx] ?? null;
   }, [stories, selected]);
+  const previewStoryDescription = previewStory?.description?.trim() ?? "";
 
   useEffect(() => {
     if (!previewStory) {
@@ -133,8 +134,7 @@ export default function WattpadPage() {
       setZhIntroBusy(false);
       return;
     }
-    const desc = previewStory.description?.trim() ?? "";
-    if (!desc) {
+    if (!previewStoryDescription) {
       setZhIntro("");
       setZhIntroErr(null);
       setZhIntroBusy(false);
@@ -151,7 +151,7 @@ export default function WattpadPage() {
           const res = await fetch("/api/wattpad/translate-synopsis", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: desc }),
+            body: JSON.stringify({ text: previewStoryDescription }),
             signal: ac.signal,
           });
           const raw = await res.text();
@@ -189,7 +189,7 @@ export default function WattpadPage() {
       window.clearTimeout(tid);
       ac.abort();
     };
-  }, [previewStory?.url, previewStory?.description]);
+  }, [previewStory, previewStoryDescription]);
 
   const toggleRow = (index: number, ev: ChangeEvent<HTMLInputElement>) => {
     ev.stopPropagation();

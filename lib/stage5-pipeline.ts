@@ -105,7 +105,7 @@ export function buildEpisodeUserMessage(
 ): string {
   const parts: string[] = [
     `[自动流水线] 请严格服从【工程注入】与侧栏「系列圣经」，`,
-    `按 \`agent/templates/Episode Development Script Template.md\` 模板，`,
+    `按 \`agent/script-agent/templates/Episode Development Script Template.md\` 模板，`,
     `输出 **第 ${epNum} 集**（全剧共 ${totalEpisodes} 集）的完整分集剧本。`,
     `结构必须是：\`## 第${epNum}集：《标题》\` + 概述字段（本集剧情核心、本集情绪走向、时长、∆场景/∆出场人物/∆出场物品、本集主钩子、本集集尾卡点类型）+ 分隔线 \`---\` + \`正文：\` + **单块时间线正文**。`,
     `**禁止**再写「场次」「幕」「#### 幕」；禁止镜头编号、景别、机位、时间段标签。`,

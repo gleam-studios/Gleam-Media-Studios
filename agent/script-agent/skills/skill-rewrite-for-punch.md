@@ -15,14 +15,14 @@
 2. **并**：同一意图的多句合并为一句带刺或带坑的对白。
 3. **提**：把最狠的信息或动作尽量靠近**每场的后半**；全集最狠靠近**集尾**（仍服从 `05_CLIFFHANGER_RULES.md`）。
 4. **换**：集尾若类型与上集重复，改型或做复合卡点（主次分明）。
-5. 对照 `knowledge/01_EPISODE_SPECS.md` 做体量自检。
+5. 对照 `agent/script-agent/knowledge/01_EPISODE_SPECS.md` 做体量自检。
 
 ## 引用 knowledge
 
-- `knowledge/01_EPISODE_SPECS.md`
-- `knowledge/04_HOOK_LEXICON.md`
-- `knowledge/05_CLIFFHANGER_RULES.md`
-- `knowledge/06_CAST_VOICE.md`
+- `agent/script-agent/knowledge/01_EPISODE_SPECS.md`
+- `agent/script-agent/knowledge/04_HOOK_LEXICON.md`
+- `agent/script-agent/knowledge/05_CLIFFHANGER_RULES.md`
+- `agent/script-agent/knowledge/06_CAST_VOICE.md`
 
 ## 输出格式
 
