@@ -10,7 +10,7 @@ if [[ ! -d .venv ]]; then
 fi
 # shellcheck source=/dev/null
 source .venv/bin/activate
-pip install -q -r requirements.txt
+python -m pip install -q -r requirements.txt
 
 echo "Wattpad API: http://127.0.0.1:8765  (Ctrl+C 停止)"
 exec uvicorn main:app --host 127.0.0.1 --port 8765

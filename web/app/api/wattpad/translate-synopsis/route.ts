@@ -37,7 +37,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error:
-            "Wattpad API 返回 404：当前进程里没有 /v1/translate/synopsis（多为旧代码或未重启）。请在仓库根执行 npm run dev，或在 services/wattpad-api 下重新运行 uvicorn main:app --host 127.0.0.1 --port 8765；Electron 需重新打包/更新内置 API。",
+            "Wattpad API 返回 404：当前进程里没有 /v1/translate/synopsis（多为旧代码或未重启）。请在仓库根执行 npm run dev，或在 services/wattpad-api 下重新运行 uvicorn main:app --host 127.0.0.1 --port 8765，并确认 WATTPAD_API_URL 指向该服务。",
         },
         { status: 502 }
       );

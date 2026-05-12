@@ -19,11 +19,5 @@ npm-debug.log*
 # Local app data (user projects; do not publish)
 data/projects/*.json
 
-# Electron 桌面打包产物与临时资源
-desktop/node_modules/
-desktop/release/
-desktop/resources/
-desktop/.cache/
-
 # Python Wattpad service
 **/services/wattpad-api/.venv/

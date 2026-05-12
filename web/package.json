@@ -2,6 +2,9 @@
   "name": "web",
   "version": "1.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "wattpad-api": "bash scripts/start-wattpad-api.sh",
     "dev": "concurrently -k --kill-others-on-fail -n next,wattpad -c cyan,magenta \"npm run dev:web\" \"bash scripts/start-wattpad-api.sh\"",
@@ -9,7 +12,8 @@
     "dev:web:turbopack": "next dev -p 4000",
     "dev:web:webpack": "next dev -p 4000 --webpack",
     "build": "next build",
-    "start": "next start -p 4000",
+    "postbuild": "node scripts/copy-repo-assets-to-standalone.mjs",
+    "start": "next start -H 0.0.0.0",
     "lint": "eslint",
     "smoke:extract-stage5": "npx tsx lib/artifact-extract.stage5.smoke.ts"
   },

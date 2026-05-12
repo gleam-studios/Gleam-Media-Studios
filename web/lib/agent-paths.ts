@@ -1,13 +1,13 @@
 import path from "path";
 
-/** 仓库根（含 agent/、knowledge/、skills/）。Electron 打包时由主进程设置 SCRIPT_AGENT_ROOT。 */
+/** 仓库根（含 agent/、knowledge/、skills/）。服务器或自定义布局可通过 SCRIPT_AGENT_ROOT 覆盖。 */
 export function resolveAgentRoot(): string {
   const env = process.env.SCRIPT_AGENT_ROOT?.trim();
   if (env) return path.resolve(env);
   return path.resolve(process.cwd(), "..");
 }
 
-/** 项目 JSON 目录。Electron 下通常指向 userData/data/projects。 */
+/** 项目 JSON 目录。可通过 SCRIPT_AGENT_DATA_DIR 指向持久化卷。 */
 export function resolveDataProjectsDir(): string {
   const env = process.env.SCRIPT_AGENT_DATA_DIR?.trim();
   if (env) return path.resolve(env);
