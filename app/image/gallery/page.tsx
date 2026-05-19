@@ -2,15 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { GPT_IMAGE_QUALITY_LABELS, type ImageAspectRatio, type ImageGalleryRecord } from "@/lib/image-workspace";
+import { GPT_IMAGE_QUALITY_LABELS, type ImageGalleryRecord } from "@/lib/image-workspace";
 import { loadImageGallery, saveImageGallery } from "@/lib/image-storage";
 import shellStyles from "../../shared/shell.module.css";
 import styles from "./gallery-page.module.css";
-
-function aspectRatioStyle(ratio: ImageAspectRatio) {
-  if (ratio === "auto") return undefined;
-  return { aspectRatio: ratio.replaceAll(":", " / ") } as const;
-}
 
 export default function ImageGalleryPage() {
   const [records, setRecords] = useState<ImageGalleryRecord[]>([]);
@@ -83,7 +78,6 @@ export default function ImageGalleryPage() {
                     src={record.imageUrl}
                     alt={record.modeName}
                     className={styles.tileImg}
-                    style={aspectRatioStyle(record.aspectRatio)}
                     loading="lazy"
                   />
                   <span className={styles.tileMeta}>

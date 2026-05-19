@@ -59,13 +59,15 @@
   }
 }
 
-/* 外层仅裁切与占位：完全透明、无边框、无阴影；圆角只作用于生成图轮廓 */
+/* 外层裁切框随图片比例收缩，不再占满整列视口（避免与真实宽高比错位的大灰边） */
 .resultClip {
   box-sizing: border-box;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
+  width: auto;
+  max-width: 100%;
+  height: auto;
   max-height: 100%;
+  min-width: 0;
+  min-height: 0;
   border: none;
   border-radius: 30px;
   background: transparent;
@@ -609,7 +611,8 @@
 .historyItem img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  background: #09090b;
 }
 
 .historyFail {

@@ -91,7 +91,7 @@
   border-color: rgba(255, 255, 255, 0.26);
 }
 
-/* 图片以原生宽高显示；inline style 上的 aspect-ratio 仅作 placeholder */
+/* 瀑布流缩略图：按图片固有宽高比缩放宽度，不用生成参数 aspect-ratio 强行框死（易与真实像素比例不一致） */
 .tileImg {
   display: block;
   width: 100%;
@@ -161,6 +161,7 @@
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  align-items: start;
   width: min(1180px, 100%);
   max-height: calc(100vh - 48px);
   overflow: hidden;
@@ -204,16 +205,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
   background: #050506;
   padding: 16px;
-  min-height: 280px;
   min-width: 0;
+  max-height: calc(100vh - 48px);
 }
 
 .modalImage {
   display: block;
   max-width: 100%;
-  max-height: calc(100vh - 88px);
+  max-height: calc(100vh - 96px);
   width: auto;
   height: auto;
   object-fit: contain;
@@ -232,6 +234,7 @@
   border-left: 1px solid rgba(255, 255, 255, 0.08);
   overflow-y: auto;
   min-width: 0;
+  max-height: calc(100vh - 48px);
 }
 
 @media (max-width: 900px) {
