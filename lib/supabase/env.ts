@@ -41,9 +41,3 @@ export function getSupabaseServiceRoleKey(): string {
   return key;
 }
 
-export function getSiteSettingsAdminEmails(): string[] {
-  return (process.env.SITE_SETTINGS_ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
-}

@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, type MutableRefObject } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState, type MutableRefObject } from "react";
+import { SkillPacksPanel } from "@/components/settings/SkillPacksPanel";
 import shellStyles from "../shared/shell.module.css";
 import styles from "./settings-page.module.css";
 import type { Settings } from "@/lib/types";
@@ -23,22 +25,34 @@ import {
   type ImageWorkspaceSettings,
 } from "@/lib/image-workspace";
 
-type Tab = "llmApi" | "imageApi" | "imagePrompts";
+type Tab = "llmApi" | "imageApi" | "imagePrompts" | "skillPacks";
 
 const TAB_DEFS: ReadonlyArray<{ id: Tab; label: string }> = [
   { id: "llmApi", label: "LLM API" },
   { id: "imageApi", label: "生图 API" },
   { id: "imagePrompts", label: "生图 提示词" },
+  { id: "skillPacks", label: "Skill" },
 ];
 
-export default function SettingsPage() {
-  const { settings: loadedLlm, imageWorkspace: loadedImage, workspaceReady, refreshWorkspace } =
-    useApiSettings();
-  const [tab, setTab] = useState<Tab>("llmApi");
+function tabFromSearchParam(raw: string | null): Tab | null {
+  if (raw === "llmApi" || raw === "imageApi" || raw === "imagePrompts" || raw === "skillPacks") return raw;
+  return null;
+}
+
+function SettingsPageInner() {
+  const searchParams = useSearchParams();
+  const { settings: loadedLlm, imageWorkspace: loadedImage, workspaceReady, refreshWorkspace } = useApiSettings();
+  const initialTab = tabFromSearchParam(searchParams.get("tab")) ?? "llmApi";
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [llmSettings, setLlmSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [imageSettings, setImageSettings] = useState<ImageWorkspaceSettings>(DEFAULT_IMAGE_SETTINGS);
   const [savedMessage, setSavedMessage] = useState("");
   const imagePromptsPersistMergeRef = useRef<(() => ImageWorkspaceSettings) | null>(null);
+
+  useEffect(() => {
+    const fromUrl = tabFromSearchParam(searchParams.get("tab"));
+    if (fromUrl) setTab(fromUrl);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!workspaceReady) return;
@@ -93,8 +107,8 @@ export default function SettingsPage() {
       <div className={shellStyles.body}>
         <div className={shellStyles.shell}>
           <p className={styles.workspacePersistNotice}>
-            <strong>全站配置</strong>保存在 Supabase。这里修改的 LLM / 生图 API Key 与提示词是 SaaS 全局设置，
-            所有登录账号与设备都会读取同一份配置；项目与画廊仍按用户账号隔离。
+            <strong>全站配置</strong>保存在 Supabase。这里修改的 LLM / 生图 API Key、提示词与 Skill 包是 SaaS 全局设置，
+            所有登录账号与设备都会读取同一份配置；项目、对话会话与画廊仍按用户账号隔离。
           </p>
           <div className={styles.tabBar}>
             <div className={shellStyles.segmented}>
@@ -133,9 +147,19 @@ export default function SettingsPage() {
           {tab === "imageApi" ? (
             <ImageApiPanel value={imageSettings} onChange={setImageSettings} />
           ) : null}
+
+          {tab === "skillPacks" ? <SkillPacksPanel /> : null}
         </div>
       </div>
     </main>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={<div className={shellStyles.empty}>加载中…</div>}>
+      <SettingsPageInner />
+    </Suspense>
   );
 }
 
@@ -153,7 +177,7 @@ function LlmApiPanel({
           <div>
             <h2 className={shellStyles.cardTitle}>LLM API</h2>
             <p className={shellStyles.cardSubtitle}>
-              所有文本大模型（编剧室、策划对话、英语简报等）共用这一套 OpenAI 兼容网关；修改后点击顶部「保存」写入本机。
+              所有文本大模型（编剧室、策划对话、首页「对话」工作模式、英语简报等）共用这一套 OpenAI 兼容网关；修改后点击顶部「保存」写入云端。
             </p>
           </div>
         </div>

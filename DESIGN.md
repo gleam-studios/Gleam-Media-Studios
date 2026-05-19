@@ -3,7 +3,7 @@
 ## Source of truth
 - Status: Active
 - Last refreshed: 2026-05-17
-- Primary product surfaces: home (`/`), login (`/login`), unified project settings (`/settings`), Wattpad tools (`/wattpad`), project list (`/projects`), project intake (`/project/[id]/onboarding`), script studio (`/studio/[id]`), image workspace (`/image`, `/image/gallery`).
+- Primary product surfaces: home (`/`), login (`/login`), unified project settings (`/settings`), standalone chat (`/chat`), Wattpad tools (`/wattpad`), project list (`/projects`), project intake (`/project/[id]/onboarding`), script studio (`/studio/[id]`), image workspace (`/image`, `/image/gallery`).
 - Evidence reviewed: every page above + `app/shared/shell.module.css` (new shared shell), `app/image/image-page.module.css` (canvas + floating panels reference), `app/settings/settings-page.module.css`, `app/image/gallery/gallery-page.module.css`, `app/projects/projects-page.module.css`, `app/wattpad/wattpad-page.module.css`, `app/project/[id]/onboarding/onboarding-page.module.css`, `app/studio/[id]/studio-page.module.css`, `components/ApiSettingsProvider.tsx`, `components/SettingsDialog.tsx` (storage helpers only), `components/ChatWindow.tsx`, `components/ArtifactPanel.tsx`, `components/StudioStageStrip.tsx`, `components/StudioBibleDrawer.tsx`, `components/PlanningChatPanel.tsx`, `components/MessageBubble.tsx`, `components/StageGroup.tsx`, `lib/image-workspace.ts`, `lib/image-storage.ts`, `lib/types.ts`, `lib/model-presets.ts`.
 
 ## Brand
@@ -24,7 +24,8 @@
 ## Information architecture
 - **Settings entry — single source**: project-wide configuration is **only reachable from the home page** (`app/page.tsx`) via a single **`设置`** pill in the topnav that navigates to **`/settings`**. **No other page surfaces a settings button.** Studio / onboarding may still call `useApiSettings().openSettings()` programmatically when the API key is missing — this method **navigates** to `/settings` rather than opening a modal. `ApiSettingsProvider` no longer mounts a `SettingsDialog`, no longer auto-opens on hydrate, and remains in `app/layout.tsx` purely so any page can read `settings` and trigger the navigation.
 - **Unified shell**: every route renders the same chrome — `shellStyles.page` (full-viewport flex column with the radial-haloed near-black gradient background) + `shellStyles.topbar` (56px translucent border-bottom bar with `backdrop-filter: blur(20px)`). The topbar's left cluster uses `topbarLeft` and may carry `plainDockText` "back" links (`返回首页` / `返回作图` / `返回项目页` / `返回项目列表`) plus a `topbarTagline` subtitle. The right cluster uses `topnav` and may carry `navLink` pills (and optional `navLinkPrimary` / `navLinkDanger` modifiers).
-- **`/`** (home): topbar tagline `Gleam Media Studios` + single `设置` pill. Body is a centered `heroWrap` with a `tileGrid` of three large `tile` cards: 扒网文 → `/wattpad`, 创作剧本 → `/projects`, 作图 → `/image`.
+- **`/`** (home): topbar tagline `Gleam Media Studios 工作台` + single `设置` pill. Body is a centered `heroWrap` with a `tileGrid` of four large `tile` cards: 扒网文 → `/wattpad`, 创作剧本 → `/projects`, 作图 → `/image`, 对话 → `/chat`.
+- **`/chat`** — **standalone Agent chat** (not tied to `projects`): topbar `返回首页` + tagline `对话` + `会话` toggle. Body is full-height `ChatWorkspace` — left rail (LLM 只读摘要 + 全站 Skill 勾选 + 作图提示), centre message stream + composer, optional right session list. Data: `chat_conversations` per user; **全站 Skill** in `site_skill_packs` (upload/delete in `/settings` → Skill tab, admin only); **LLM** 共用 `site_settings.llm`；作图读 `image_workspace`。Server `POST /api/chat/agent` runs tool loop (`generate_image` → `lib/image-generate`).
 - **`/login`**: same shell; centered `card` with one `field` (password) + `bannerError` (when applicable) + `button buttonPrimary` (`进入`).
 - **`/projects`**: topbar (back to `/` + tagline `项目列表` + `新建项目` `navLinkPrimary`, which now POSTs `/api/projects` and routes straight to onboarding without an interstitial). Body `shell shellWide` carrying a search input + sort `select` row plus a responsive grid of `projectCard`s (each with three `metaPill`s — `已验至 S{n}` / `集数` / `圣经✓ or ·`).
 - **`/project/new`**: kept as a server-side `redirect('/projects')` stub for legacy deeplinks; no UI.
@@ -33,8 +34,8 @@
 - **`/wattpad`**: shell + topbar. Body splits into a top **search `card`** (label/input/button + checkbox row) → table+preview split (each a `card`) → log `card`. Modals reuse `card` chrome with the global `modalBackdrop` blur.
 - **`/image`** top bar: left = `返回首页` + `画廊` (`plainDockText` + `dockTextLink`) + tagline; right is empty. Body keeps the floating mode strip (left), canvas, history strip (right), reference strip + composer.
 - **`/image/gallery`** top bar: left = `返回作图` + tagline; right = `清空记录` (`navLink navLinkDanger`).
-- **`/settings`**: same shell + topbar (left `返回首页` + tagline `项目设置`; right `已保存` micro-toast + `保存` `navLink navLinkPrimary`). Body uses `shellStyles.body` + `shellStyles.shell` and renders a centered `segmented` strip + tab panel made of `card` sections.
-- Core routes/screens: `/`, `/login`, `/settings`, `/image`, `/image/gallery`, `/projects`, `/project/new`, `/project/[id]/onboarding`, `/studio/[id]`, `/wattpad`.
+- **`/settings`**: same shell + topbar (left `返回首页` + tagline `项目设置`; right `已保存` micro-toast + `保存` `navLink navLinkPrimary`). Body uses `shellStyles.body` + `shellStyles.shell` and renders a centered `segmented` strip + tab panel made of `card` sections. Tabs: LLM API · 生图 API · 生图 提示词 · **Skill** (ZIP upload to `site_skill_packs`, immediate persist, not tied to top「保存」).
+- Core routes/screens: `/`, `/login`, `/settings`, `/chat`, `/image`, `/image/gallery`, `/projects`, `/project/new`, `/project/[id]/onboarding`, `/studio/[id]`, `/wattpad`.
 - **Removed**: `/image/settings` (folded into `/settings`).
 
 ## Design principles

@@ -1,4 +1,4 @@
-# Gleam Media Studios
+# Gleam Media Studios 工作台
 
 **由 [Gleam Media Studios, Inc.](https://github.com/gleam-studios) 出品**
 
@@ -15,7 +15,7 @@
 
 ## 我们解决什么问题？
 
-系列化内容制作往往把 **素材调研、立项文档、分集写作、角色定妆** 拆在不同表格、聊天窗口和生图工具里，上下文容易断裂，版本也难以对齐。**Gleam Media Studios** 把这些环节 **产品化** 为可重复的工作流：
+系列化内容制作往往把 **素材调研、立项文档、分集写作、角色定妆** 拆在不同表格、聊天窗口和生图工具里，上下文容易断裂，版本也难以对齐。**Gleam Media Studios 工作台** 把这些环节 **产品化** 为可重复的工作流：
 
 1. **扒网文** — 在 Wattpad 等来源检索、预览、导出素材，为改编立项提供输入。
 2. **创剧本** — 用结构化立项向导产出思路书、系列圣经、英语简报，再进入编剧室按阶段推进。
@@ -87,7 +87,7 @@ flowchart LR
 - **生图 API**：按模型槽位配置网关与模型名。  
 - **生图提示词**：各模式固定模版与参考图槽提示。  
 
-配置写入 Supabase `site_settings`；**所有登录用户共享** 同一套 API 配置，仅 **管理员邮箱** 可在应用内修改（详见 `AGENTS.md`）。
+配置写入 Supabase `site_settings` / `site_skill_packs`；**所有登录用户共享** 同一套全站配置，登录后均可在设置页修改（详见 `AGENTS.md`）。
 
 ### 账号与数据
 
@@ -277,4 +277,4 @@ uvicorn main:app --host 0.0.0.0 --port 8765
 
 ## English summary
 
-**Gleam Media Studios** is a production web workspace by **Gleam Media Studios, Inc.** for serialized film and streaming content: optional Wattpad discovery, Supabase-backed projects, a four-tab onboarding flow, a seven-stage writer’s room with chat and structured artifacts, and a mode-driven AI image studio with gallery. Built with **Next.js 16** and **React 19**, shipped as a **standalone** Node bundle for Docker / PaaS hosting. Configure LLM and image APIs through in-app settings using any OpenAI-compatible gateway.
+**Gleam Media Studios 工作台** is a production web workspace by **Gleam Media Studios, Inc.** for serialized film and streaming content: optional Wattpad discovery, Supabase-backed projects, a four-tab onboarding flow, a seven-stage writer’s room with chat and structured artifacts, and a mode-driven AI image studio with gallery. Built with **Next.js 16** and **React 19**, shipped as a **standalone** Node bundle for Docker / PaaS hosting. Configure LLM and image APIs through in-app settings using any OpenAI-compatible gateway.

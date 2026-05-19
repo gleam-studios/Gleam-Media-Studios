@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getSiteSettingsAdminEmails } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   getWorkspaceSnapshot,
@@ -25,17 +24,6 @@ export async function POST(req: Request) {
     } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "请先登录" }, { status: 401 });
-    }
-    const adminEmails = getSiteSettingsAdminEmails();
-    const email = user.email?.trim().toLowerCase();
-    if (!email || !adminEmails.includes(email)) {
-      return NextResponse.json(
-        {
-          error: "没有权限修改全站设置",
-          hint: "请在服务端环境变量 SITE_SETTINGS_ADMIN_EMAILS 中配置管理员邮箱。",
-        },
-        { status: 403 },
-      );
     }
 
     const body = (await req.json()) as { llm?: unknown; imageWorkspace?: unknown };

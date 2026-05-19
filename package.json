@@ -17,7 +17,8 @@
     "start": "next start -H 0.0.0.0",
     "lint": "eslint",
     "smoke:extract-stage5": "npx tsx lib/artifact-extract.stage5.smoke.ts",
-    "migrate:supabase": "npx tsx scripts/migrate-local-data-to-supabase.ts"
+    "migrate:supabase": "npx tsx scripts/migrate-local-data-to-supabase.ts",
+    "db:push": "npx tsx scripts/push-supabase-migrations.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
@@ -37,12 +38,14 @@
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pdf-parse": "^1.1.5",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "concurrently": "^9.2.0",
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
+    "pg": "^8.21.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

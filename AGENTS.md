@@ -24,7 +24,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 - **登录**：Supabase Auth 邮箱 + 密码（`/login` 可注册）。
 - **持久化**：PostgreSQL（`site_settings`、`projects`、`image_gallery_records`）；项目和图库按 `auth.users` 隔离，RLS 启用。
-- **设置页**：LLM / 生图 API Key 与提示词写入 Supabase 的全站配置，所有账号共用；只有管理员邮箱可在应用内修改。
+- **设置页**：LLM / 生图 API Key、提示词与 Skill 写入 Supabase 的全站配置，所有登录账号共用并可修改（需登录）。
 
 ### Supabase Dashboard
 
@@ -38,6 +38,8 @@ supabase login
 supabase link --project-ref bfvilvoiangeilxuxpdh
 supabase db push
 ```
+
+对话（`/chat`）与全站 Skill 依赖 `chat_conversations`、`site_skill_packs` 等表。若未 push 迁移，会出现「无法加载会话列表」。无 CLI 时可在 Supabase SQL Editor 执行 [`scripts/apply-chat-migrations-manual.sql`](scripts/apply-chat-migrations-manual.sql)。
 
 ### 导入本地旧数据
 

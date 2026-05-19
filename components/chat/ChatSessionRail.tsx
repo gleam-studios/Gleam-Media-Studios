@@ -1,0 +1,153 @@
+"use client";
+
+import type { ChatConversationSummary } from "@/lib/chat/types";
+import imageStyles from "@/app/image/image-page.module.css";
+import railStyles from "./chat-side-rail.module.css";
+import styles from "./chat-session-rail.module.css";
+
+function displayTitle(title: string): string {
+  const t = title.trim();
+  if (t.length <= 16) return t;
+  return `${t.slice(0, 15)}…`;
+}
+
+function PencilIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/** 与左侧 ChatSkillRail 对称：复用 image 右侧 historyPanel 定位 + mode 轨道样式 */
+export function ChatSessionRail({
+  summaries,
+  activeId,
+  renamingId,
+  renameDraft,
+  onRenameDraftChange,
+  onSelect,
+  onNew,
+  onStartRename,
+  onCommitRename,
+  onDelete,
+}: {
+  summaries: ChatConversationSummary[];
+  activeId: string | null;
+  renamingId: string | null;
+  renameDraft: string;
+  onRenameDraftChange: (value: string) => void;
+  onSelect: (id: string) => void;
+  onNew: () => void;
+  onStartRename: (id: string, title: string) => void;
+  onCommitRename: () => void;
+  onDelete: (id: string) => void;
+}) {
+  const items = [{ kind: "new" as const, id: "__new__" }, ...summaries.map((s) => ({ kind: "session" as const, session: s }))];
+  const faded = items.length > 7;
+
+  return (
+    <aside className={imageStyles.historyPanel} aria-label="会话">
+      <div className={[imageStyles.modeColumn, railStyles.railColumn].join(" ")}>
+        <div className={imageStyles.modeRail}>
+          <div className={imageStyles.modeRailFrame}>
+            <div
+              className={[imageStyles.modeScrollWrap, faded ? imageStyles.modeScrollWrapFaded : ""]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              <div className={imageStyles.modeScroll}>
+                <div className={imageStyles.modeList}>
+                  {items.map((item) => {
+                    if (item.kind === "new") {
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className={[imageStyles.modeButton, railStyles.railCard].join(" ")}
+                          onClick={() => onNew()}
+                        >
+                          <span className={imageStyles.modeName}>新建</span>
+                        </button>
+                      );
+                    }
+
+                    const s = item.session;
+                    const active = s.id === activeId;
+                    const renaming = renamingId === s.id;
+
+                    return (
+                      <div key={s.id} className={styles.sessionRow}>
+                        {renaming ? (
+                          <input
+                            className={[imageStyles.modeButton, railStyles.railCard, styles.renameInput].join(" ")}
+                            value={renameDraft}
+                            onChange={(e) => onRenameDraftChange(e.target.value)}
+                            onBlur={() => onCommitRename()}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") onCommitRename();
+                              if (e.key === "Escape") onCommitRename();
+                            }}
+                            autoFocus
+                            aria-label="重命名会话"
+                          />
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              title={s.title}
+                              onClick={() => onSelect(s.id)}
+                              onDoubleClick={() => onStartRename(s.id, s.title)}
+                              className={[
+                                imageStyles.modeButton,
+                                railStyles.railCard,
+                                styles.sessionMain,
+                                active ? imageStyles.modeButtonActive : "",
+                              ]
+                                .filter(Boolean)
+                                .join(" ")}
+                            >
+                              <span className={imageStyles.modeName}>{displayTitle(s.title)}</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.renameBtn}
+                              aria-label="重命名"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onStartRename(s.id, s.title);
+                              }}
+                            >
+                              <PencilIcon />
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.deleteBtn}
+                              aria-label="删除"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(s.id);
+                              }}
+                            >
+                              ×
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+}

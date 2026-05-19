@@ -87,6 +87,20 @@ function ModeHomeInner() {
             <p className={shellStyles.tileTitle}>作图</p>
             <p className={shellStyles.tileMeta}>模式化生图 · 画廊</p>
           </button>
+
+          <button type="button" onClick={() => router.push("/chat")} className={shellStyles.tile}>
+            <span className={shellStyles.tileIcon}>
+              <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm3.75 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm3.75 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM8.25 6.75h7.5v10.5h-7.5V6.75ZM6 20.25h12A2.25 2.25 0 0 0 20.25 18V6A2.25 2.25 0 0 0 18 3.75H6A2.25 2.25 0 0 0 3.75 6v12A2.25 2.25 0 0 0 6 20.25Z"
+                />
+              </svg>
+            </span>
+            <p className={shellStyles.tileTitle}>对话</p>
+            <p className={shellStyles.tileMeta}>Agent · Skill · 多会话</p>
+          </button>
         </div>
       </div>
     </main>

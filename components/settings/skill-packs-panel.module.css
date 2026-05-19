@@ -1,0 +1,136 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lead {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #a1a1aa;
+}
+
+.lead code {
+  font-size: 12px;
+  color: #d4d4d8;
+}
+
+.statusOk {
+  margin: 0;
+  font-size: 12px;
+  color: #86efac;
+}
+
+.listSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.listHead {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.empty {
+  margin: 0;
+  padding: 16px;
+  font-size: 12px;
+  color: #52525b;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.rowMain {
+  min-width: 0;
+  flex: 1;
+}
+
+.rowTitle {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #e4e4e7;
+}
+
+.rowMeta {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #71717a;
+}
+
+.rowActions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.editBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: transparent;
+  color: #a1a1aa;
+  cursor: pointer;
+}
+
+.editBtn:hover {
+  color: #fafafa;
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.renameInput {
+  width: 100%;
+  max-width: 280px;
+}
+
+.deleteBtn {
+  flex-shrink: 0;
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  background: transparent;
+  color: #fca5a5;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.deleteBtn:hover {
+  background: rgba(248, 113, 113, 0.1);
+}
