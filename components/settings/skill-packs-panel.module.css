@@ -56,17 +56,20 @@
   border-radius: 10px;
 }
 
+.rowBlock {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.rowBlock:last-child {
+  border-bottom: none;
+}
+
 .row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 12px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.row:last-child {
-  border-bottom: none;
 }
 
 .rowMain {
@@ -133,4 +136,91 @@
 
 .deleteBtn:hover {
   background: rgba(248, 113, 113, 0.1);
+}
+
+.hintBtn {
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: #d4d4d8;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.hintBtn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.hintEdit {
+  padding: 0 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hintLabel {
+  font-size: 11px;
+  color: #a1a1aa;
+}
+
+.hintTextarea {
+  width: 100%;
+  min-height: 140px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+  color: #e4e4e7;
+  font-size: 12px;
+  line-height: 1.5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.hintTextarea:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.hintActions {
+  display: flex;
+  gap: 8px;
+}
+
+.hintSaveBtn {
+  border: 1px solid rgba(134, 239, 172, 0.35);
+  background: rgba(134, 239, 172, 0.08);
+  color: #86efac;
+  font-size: 11px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.hintCancelBtn {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: #a1a1aa;
+  font-size: 11px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.hintPreview {
+  margin: 0;
+  padding: 0 14px 10px;
+  font-size: 11px;
+  color: #71717a;
+}
+
+.hintPreviewMuted {
+  margin: 0;
+  padding: 0 14px 10px;
+  font-size: 11px;
+  color: #52525b;
 }

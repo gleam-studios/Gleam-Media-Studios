@@ -131,19 +131,22 @@ export function ChatComposer({
             />
             <span className={styles.addPlus}>+</span>
           </label>
-          <select
-            value={selectedImageModelId}
-            disabled={isSending}
-            aria-label="生图模型"
-            className={[imageStyles.composerSelect, styles.modelSelect].join(" ")}
-            onChange={(e) => onImageModelChange(e.target.value as ImageModelId)}
-          >
-            {IMAGE_MODEL_ORDER.map((id) => (
-              <option key={id} value={id}>
-                {imageWorkspace.models[id].label}
-              </option>
-            ))}
-          </select>
+          <div className={styles.modelGroup}>
+            <span className={styles.modelHint}>调用生图模型</span>
+            <select
+              value={selectedImageModelId}
+              disabled={isSending}
+              aria-label="生图模型"
+              className={[imageStyles.composerSelect, styles.modelSelect].join(" ")}
+              onChange={(e) => onImageModelChange(e.target.value as ImageModelId)}
+            >
+              {IMAGE_MODEL_ORDER.map((id) => (
+                <option key={id} value={id}>
+                  {imageWorkspace.models[id].label}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className={styles.toolbarSpacer} />
           <button
             type="button"

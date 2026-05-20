@@ -6,6 +6,11 @@ import type {
   ConversationAttachmentEntry,
 } from "@/lib/chat/types";
 
+function normalizeEnabledSkillPackIds(ids: string[] | null): string[] | undefined {
+  if (!ids?.length) return undefined;
+  return [ids[0]!];
+}
+
 function rowToConversation(row: {
   id: string;
   title: string;
@@ -20,7 +25,7 @@ function rowToConversation(row: {
     updatedAt: new Date(row.updated_at).getTime(),
     messages: (Array.isArray(row.messages) ? row.messages : []) as ChatMessage[],
     attachments: (Array.isArray(row.attachments) ? row.attachments : []) as ConversationAttachmentEntry[],
-    enabledSkillPackIds: row.enabled_skill_pack_ids ?? undefined,
+    enabledSkillPackIds: normalizeEnabledSkillPackIds(row.enabled_skill_pack_ids),
   };
 }
 

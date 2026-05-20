@@ -8,7 +8,13 @@ type SiteSkillPackRow = {
   skills: unknown;
   imported_at: string;
   display_label?: string | null;
+  chat_usage_hint?: string | null;
 };
+
+const SELECT_WITH_HINT =
+  "id, title, display_label, chat_usage_hint, skills, imported_at" as const;
+const SELECT_LEGACY_LABEL = "id, title, display_label, skills, imported_at" as const;
+const SELECT_LEGACY = "id, title, skills, imported_at" as const;
 
 function rowToSkillPack(row: SiteSkillPackRow): SkillPackRecord {
   const skills = (Array.isArray(row.skills) ? row.skills : []) as SkillPackRecord["skills"];
@@ -16,6 +22,7 @@ function rowToSkillPack(row: SiteSkillPackRow): SkillPackRecord {
     id: row.id,
     title: row.title,
     displayLabel: row.display_label?.trim() ?? "",
+    chatUsageHint: row.chat_usage_hint?.trim() || undefined,
     importedAt: new Date(row.imported_at).getTime(),
     skills,
   };
@@ -25,33 +32,45 @@ function rowToSkillPack(row: SiteSkillPackRow): SkillPackRecord {
   return pack;
 }
 
-function isMissingDisplayLabelColumn(e: unknown): boolean {
+function isMissingColumn(e: unknown, column: string): boolean {
   const message =
     e && typeof e === "object" && "message" in e && typeof (e as { message: unknown }).message === "string"
       ? (e as { message: string }).message
       : e instanceof Error
         ? e.message
         : String(e);
-  return /display_label/i.test(message) && /does not exist|Could not find|schema cache/i.test(message);
+  const col = column.toLowerCase();
+  return new RegExp(col, "i").test(message) && /does not exist|Could not find|schema cache/i.test(message);
 }
 
 export async function listSiteSkillPacks(supabase: SupabaseClient): Promise<SkillPackRecord[]> {
+  const withHint = await supabase
+    .from("site_skill_packs")
+    .select(SELECT_WITH_HINT)
+    .order("imported_at", { ascending: false });
+
+  if (!withHint.error) {
+    return (withHint.data ?? []).map((row) => rowToSkillPack(row as SiteSkillPackRow));
+  }
+  if (!isMissingColumn(withHint.error, "chat_usage_hint")) {
+    throw withHint.error;
+  }
+
   const withLabel = await supabase
     .from("site_skill_packs")
-    .select("id, title, display_label, skills, imported_at")
+    .select(SELECT_LEGACY_LABEL)
     .order("imported_at", { ascending: false });
 
   if (!withLabel.error) {
     return (withLabel.data ?? []).map((row) => rowToSkillPack(row as SiteSkillPackRow));
   }
-
-  if (!isMissingDisplayLabelColumn(withLabel.error)) {
+  if (!isMissingColumn(withLabel.error, "display_label")) {
     throw withLabel.error;
   }
 
   const legacy = await supabase
     .from("site_skill_packs")
-    .select("id, title, skills, imported_at")
+    .select(SELECT_LEGACY)
     .order("imported_at", { ascending: false });
 
   if (legacy.error) throw legacy.error;
@@ -60,18 +79,29 @@ export async function listSiteSkillPacks(supabase: SupabaseClient): Promise<Skil
 
 export async function insertSiteSkillPack(supabase: SupabaseClient, pack: SkillPackRecord): Promise<void> {
   const importedAt = new Date(pack.importedAt).toISOString();
-  const withLabel = await supabase.from("site_skill_packs").insert({
+  const withHint = await supabase.from("site_skill_packs").insert({
     id: pack.id,
     title: pack.title,
     display_label: pack.displayLabel,
+    chat_usage_hint: pack.chatUsageHint ?? null,
     skills: pack.skills,
     imported_at: importedAt,
   });
 
-  if (!withLabel.error) return;
+  if (!withHint.error) return;
 
-  if (!isMissingDisplayLabelColumn(withLabel.error)) {
-    throw withLabel.error;
+  if (isMissingColumn(withHint.error, "chat_usage_hint")) {
+    const withLabel = await supabase.from("site_skill_packs").insert({
+      id: pack.id,
+      title: pack.title,
+      display_label: pack.displayLabel,
+      skills: pack.skills,
+      imported_at: importedAt,
+    });
+    if (!withLabel.error) return;
+    if (!isMissingColumn(withLabel.error, "display_label")) throw withLabel.error;
+  } else if (!isMissingColumn(withHint.error, "display_label")) {
+    throw withHint.error;
   }
 
   const legacy = await supabase.from("site_skill_packs").insert({
@@ -83,33 +113,58 @@ export async function insertSiteSkillPack(supabase: SupabaseClient, pack: SkillP
   if (legacy.error) throw legacy.error;
 }
 
+export type SiteSkillPackPatch = {
+  displayLabel?: string;
+  /** 传空字符串表示清空 */
+  chatUsageHint?: string;
+};
+
+export async function updateSiteSkillPack(
+  supabase: SupabaseClient,
+  id: string,
+  patch: SiteSkillPackPatch,
+): Promise<SkillPackRecord> {
+  const updates: Record<string, string | null> = {};
+  if (patch.displayLabel !== undefined) {
+    const label = patch.displayLabel.trim();
+    if (!label) throw new Error("显示名不能为空");
+    updates.display_label = label;
+  }
+  if (patch.chatUsageHint !== undefined) {
+    const hint = patch.chatUsageHint.trim();
+    updates.chat_usage_hint = hint || null;
+  }
+  if (Object.keys(updates).length === 0) {
+    throw new Error("没有可更新的字段");
+  }
+
+  const { data, error } = await supabase
+    .from("site_skill_packs")
+    .update(updates)
+    .eq("id", id)
+    .select(SELECT_WITH_HINT)
+    .single();
+
+  if (error) {
+    if (isMissingColumn(error, "chat_usage_hint") && patch.chatUsageHint !== undefined) {
+      throw new Error("数据库缺少 chat_usage_hint 列，无法保存对话页说明。请执行迁移 SQL。");
+    }
+    if (isMissingColumn(error, "display_label")) {
+      throw new Error("数据库缺少 display_label 列，无法保存显示名。请执行迁移 SQL。");
+    }
+    throw error;
+  }
+  if (!data) throw new Error("Skill 包不存在");
+  return rowToSkillPack(data as SiteSkillPackRow);
+}
+
+/** @deprecated 使用 updateSiteSkillPack */
 export async function updateSiteSkillPackDisplayLabel(
   supabase: SupabaseClient,
   id: string,
   displayLabel: string,
 ): Promise<SkillPackRecord> {
-  const label = displayLabel.trim();
-  if (!label) {
-    throw new Error("显示名不能为空");
-  }
-
-  const { data, error } = await supabase
-    .from("site_skill_packs")
-    .update({ display_label: label })
-    .eq("id", id)
-    .select("id, title, display_label, skills, imported_at")
-    .single();
-
-  if (error) {
-    if (isMissingDisplayLabelColumn(error)) {
-      throw new Error("数据库缺少 display_label 列，无法保存显示名。请执行迁移 SQL。");
-    }
-    throw error;
-  }
-  if (!data) {
-    throw new Error("Skill 包不存在");
-  }
-  return rowToSkillPack(data as SiteSkillPackRow);
+  return updateSiteSkillPack(supabase, id, { displayLabel });
 }
 
 export async function deleteSiteSkillPack(supabase: SupabaseClient, id: string): Promise<void> {

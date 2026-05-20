@@ -42,10 +42,7 @@ function ModeHomeInner() {
           <p className={shellStyles.heroSubtitle}>{BRAND_TAGLINE}</p>
         </div>
 
-        <div
-          className={shellStyles.tileGrid}
-          style={{ marginTop: 32, maxWidth: 720 }}
-        >
+        <div className={shellStyles.tileGrid} style={{ marginTop: 32 }}>
           <button type="button" onClick={() => router.push("/wattpad")} className={shellStyles.tile}>
             <span className={shellStyles.tileIcon}>
               <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>

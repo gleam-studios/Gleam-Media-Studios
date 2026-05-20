@@ -10,7 +10,7 @@ import {
   deleteSiteSkillPackApi,
   fetchSiteSkillPacks,
   importSiteSkillPack,
-  updateSiteSkillPackDisplayLabelApi,
+  updateSiteSkillPackApi,
 } from "@/lib/skill-packs-api-client";
 import styles from "./skill-packs-panel.module.css";
 
@@ -43,6 +43,8 @@ export function SkillPacksPanel() {
   const [status, setStatus] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
+  const [editingHintId, setEditingHintId] = useState<string | null>(null);
+  const [hintDraft, setHintDraft] = useState("");
 
   const reload = useCallback(async () => {
     const data = await fetchSiteSkillPacks();
@@ -72,6 +74,7 @@ export function SkillPacksPanel() {
   };
 
   const startEdit = (pack: SkillPackRecord) => {
+    setEditingHintId(null);
     setEditingId(pack.id);
     setEditDraft(skillPackDisplayLabel(pack));
   };
@@ -85,10 +88,29 @@ export function SkillPacksPanel() {
     }
     setError(null);
     try {
-      const updated = await updateSiteSkillPackDisplayLabelApi(editingId, label);
+      const updated = await updateSiteSkillPackApi(editingId, { displayLabel: label });
       setSkillPacks((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
       setEditingId(null);
-      flashStatus("已更新对话页显示名");
+      flashStatus("已更新显示名");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "保存失败");
+    }
+  };
+
+  const startEditHint = (pack: SkillPackRecord) => {
+    setEditingId(null);
+    setEditingHintId(pack.id);
+    setHintDraft(pack.chatUsageHint ?? "");
+  };
+
+  const commitHint = async () => {
+    if (!editingHintId) return;
+    setError(null);
+    try {
+      const updated = await updateSiteSkillPackApi(editingHintId, { chatUsageHint: hintDraft });
+      setSkillPacks((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+      setEditingHintId(null);
+      flashStatus("已保存对话页说明");
     } catch (e) {
       setError(e instanceof Error ? e.message : "保存失败");
     }
@@ -100,6 +122,7 @@ export function SkillPacksPanel() {
       await deleteSiteSkillPackApi(id);
       setSkillPacks((prev) => prev.filter((p) => p.id !== id));
       if (editingId === id) setEditingId(null);
+      if (editingHintId === id) setEditingHintId(null);
       flashStatus("已删除");
     } catch (e) {
       setError(e instanceof Error ? e.message : "删除失败");
@@ -109,8 +132,8 @@ export function SkillPacksPanel() {
   return (
     <section className={styles.panel}>
       <p className={styles.lead}>
-        全站 Skill 包：所有登录用户在「对话」页勾选后注入 Agent。ZIP 须含 <code>SKILL.md</code>，上传后立即写入云端，无需点击顶部「保存」。
-        点击铅笔可修改<strong>对话页左侧显示名</strong>（不影响 ZIP 文件名与 Skill 文档内容）。
+        全站 Skill 包：用户在「对话」页单选一个 Skill 后注入 Agent。ZIP 须含 <code>SKILL.md</code>，上传后立即写入云端。
+        可修改<strong>左侧显示名</strong>，并在下方填写<strong>对话页说明</strong>（Markdown，空对话时居中展示）。
       </p>
 
       <SkillZipUploader maxZipBytes={MAX_SKILL_ZIP_BYTES} onImportZip={handleImport} />
@@ -131,44 +154,84 @@ export function SkillPacksPanel() {
           <ul className={styles.list}>
             {skillPacks.map((p) => {
               const editing = editingId === p.id;
+              const editingHint = editingHintId === p.id;
               return (
-                <li key={p.id} className={styles.row}>
-                  <div className={styles.rowMain}>
-                    {editing ? (
-                      <input
-                        className={[shellStyles.inputCompact, styles.renameInput].join(" ")}
-                        value={editDraft}
-                        onChange={(e) => setEditDraft(e.target.value)}
-                        onBlur={() => void commitEdit()}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") void commitEdit();
-                          if (e.key === "Escape") setEditingId(null);
-                        }}
-                        autoFocus
-                        aria-label="对话页显示名"
-                      />
-                    ) : (
-                      <span className={styles.rowTitle}>{skillPackDisplayLabel(p)}</span>
-                    )}
-                    <span className={styles.rowMeta}>
-                      ZIP：{p.title} · {p.skills.length} 个 skill · {formatImportedAt(p.importedAt)}
-                    </span>
-                  </div>
-                  <div className={styles.rowActions}>
-                    {!editing ? (
+                <li key={p.id} className={styles.rowBlock}>
+                  <div className={styles.row}>
+                    <div className={styles.rowMain}>
+                      {editing ? (
+                        <input
+                          className={[shellStyles.inputCompact, styles.renameInput].join(" ")}
+                          value={editDraft}
+                          onChange={(e) => setEditDraft(e.target.value)}
+                          onBlur={() => void commitEdit()}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") void commitEdit();
+                            if (e.key === "Escape") setEditingId(null);
+                          }}
+                          autoFocus
+                          aria-label="对话页显示名"
+                        />
+                      ) : (
+                        <span className={styles.rowTitle}>{skillPackDisplayLabel(p)}</span>
+                      )}
+                      <span className={styles.rowMeta}>
+                        ZIP：{p.title} · {p.skills.length} 个 skill · {formatImportedAt(p.importedAt)}
+                      </span>
+                    </div>
+                    <div className={styles.rowActions}>
+                      {!editing ? (
+                        <button
+                          type="button"
+                          className={styles.editBtn}
+                          aria-label="编辑显示名"
+                          onClick={() => startEdit(p)}
+                        >
+                          <PencilIcon />
+                        </button>
+                      ) : null}
                       <button
                         type="button"
-                        className={styles.editBtn}
-                        aria-label="编辑显示名"
-                        onClick={() => startEdit(p)}
+                        className={styles.hintBtn}
+                        onClick={() => (editingHint ? setEditingHintId(null) : startEditHint(p))}
                       >
-                        <PencilIcon />
+                        {editingHint ? "收起说明" : "对话页说明"}
                       </button>
-                    ) : null}
-                    <button type="button" className={styles.deleteBtn} onClick={() => void handleDelete(p.id)}>
-                      删除
-                    </button>
+                      <button type="button" className={styles.deleteBtn} onClick={() => void handleDelete(p.id)}>
+                        删除
+                      </button>
+                    </div>
                   </div>
+
+                  {editingHint ? (
+                    <div className={styles.hintEdit}>
+                      <label className={styles.hintLabel} htmlFor={`hint-${p.id}`}>
+                        对话页说明（Markdown；换行即换行，列表用 - /指令 — 说明）
+                      </label>
+                      <textarea
+                        id={`hint-${p.id}`}
+                        className={styles.hintTextarea}
+                        value={hintDraft}
+                        onChange={(e) => setHintDraft(e.target.value)}
+                        placeholder={`## ${skillPackDisplayLabel(p)}\n\n- /start — 查看菜单\n- /asset — 输出模板`}
+                        rows={8}
+                      />
+                      <div className={styles.hintActions}>
+                        <button type="button" className={styles.hintSaveBtn} onClick={() => void commitHint()}>
+                          保存说明
+                        </button>
+                        <button type="button" className={styles.hintCancelBtn} onClick={() => setEditingHintId(null)}>
+                          取消
+                        </button>
+                      </div>
+                    </div>
+                  ) : p.chatUsageHint?.trim() ? (
+                    <p className={styles.hintPreview}>
+                      已填写对话页说明（{p.chatUsageHint.trim().length} 字）
+                    </p>
+                  ) : (
+                    <p className={styles.hintPreviewMuted}>未填写对话页说明</p>
+                  )}
                 </li>
               );
             })}

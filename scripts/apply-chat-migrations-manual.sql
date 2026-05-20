@@ -84,3 +84,7 @@ select distinct on (id) id, title, coalesce(nullif(trim(skills -> 0 ->> 'name'),
 from public.chat_skill_packs
 order by id, imported_at desc
 on conflict (id) do nothing;
+
+-- from 20260519150000_site_skill_packs_chat_usage_hint.sql
+alter table public.site_skill_packs
+  add column if not exists chat_usage_hint text null;

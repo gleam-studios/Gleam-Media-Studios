@@ -70,10 +70,26 @@
   gap: 8px;
 }
 
+.modelGroup {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
 .modelSelect {
   flex: 0 1 auto;
   min-width: 7.5rem;
   max-width: min(12rem, 42vw);
+}
+
+.modelHint {
+  flex-shrink: 0;
+  font-size: 11px;
+  line-height: 1.2;
+  color: #71717a;
+  white-space: nowrap;
 }
 
 .toolbarSpacer {

@@ -4,7 +4,7 @@ import {
   deleteSiteSkillPack,
   insertSiteSkillPack,
   listSiteSkillPacks,
-  updateSiteSkillPackDisplayLabel,
+  updateSiteSkillPack,
 } from "@/lib/db/site-skill-store";
 import { parseSkillZipBlob } from "@/lib/chat/skill-pack";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -57,13 +57,22 @@ export async function PATCH(req: Request) {
     } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "请先登录" }, { status: 401 });
 
-    const body = (await req.json()) as { id?: string; displayLabel?: string };
+    const body = (await req.json()) as {
+      id?: string;
+      displayLabel?: string;
+      chatUsageHint?: string;
+    };
     const id = body.id?.trim();
-    const displayLabel = body.displayLabel?.trim();
     if (!id) return NextResponse.json({ error: "id 必填" }, { status: 400 });
-    if (!displayLabel) return NextResponse.json({ error: "显示名不能为空" }, { status: 400 });
 
-    const skillPack = await updateSiteSkillPackDisplayLabel(supabase, id, displayLabel);
+    const patch: { displayLabel?: string; chatUsageHint?: string } = {};
+    if (body.displayLabel !== undefined) patch.displayLabel = body.displayLabel;
+    if (body.chatUsageHint !== undefined) patch.chatUsageHint = body.chatUsageHint;
+    if (patch.displayLabel === undefined && patch.chatUsageHint === undefined) {
+      return NextResponse.json({ error: "请提供 displayLabel 或 chatUsageHint" }, { status: 400 });
+    }
+
+    const skillPack = await updateSiteSkillPack(supabase, id, patch);
     return NextResponse.json({ skillPack });
   } catch (e) {
     const message = e instanceof Error ? e.message : "update_failed";

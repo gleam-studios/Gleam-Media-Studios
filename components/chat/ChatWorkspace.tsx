@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useApiSettings } from "@/components/ApiSettingsProvider";
 import { ChatMarkdown } from "@/components/chat/ChatMarkdown";
 import { ChatComposer } from "@/components/chat/ChatComposer";
@@ -23,6 +23,7 @@ import {
   saveChatConversation,
   sendChatAgentTurn,
 } from "@/lib/chat-api-client";
+import { buildChatEmptyGuideMarkdown } from "@/lib/chat/chat-empty-guide";
 import { fetchSiteSkillPacks } from "@/lib/skill-packs-api-client";
 import type { ImageModelId } from "@/lib/image-workspace";
 import shellStyles from "@/app/shared/shell.module.css";
@@ -143,7 +144,14 @@ export function ChatWorkspace() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [selectedImageModelId, setSelectedImageModelId] = useState<ImageModelId>("gpt-image-2");
+  const [isSavingSkill, setIsSavingSkill] = useState(false);
+  const [isLoadingConversation, setIsLoadingConversation] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const activeIdRef = useRef<string | null>(null);
+
+  activeIdRef.current = activeId;
+
+  const conversationMatchesActive = Boolean(activeId && conversation?.id === activeId);
 
   const loadSkillPacks = useCallback(async () => {
     const { skillPacks: packs } = await fetchSiteSkillPacks();
@@ -181,13 +189,45 @@ export function ChatWorkspace() {
   }, [workspaceReady, loadSkillPacks]);
 
   useEffect(() => {
+    setInputText("");
+    setPendingAttachments([]);
+    setError(null);
+  }, [activeId]);
+
+  useEffect(() => {
     if (!activeId) {
       setConversation(null);
+      setIsLoadingConversation(false);
       return;
     }
-    void fetchChatConversation(activeId)
-      .then(setConversation)
-      .catch((e) => setError(e instanceof Error ? e.message : "加载会话失败"));
+
+    const loadId = activeId;
+    setConversation(null);
+    setIsLoadingConversation(true);
+
+    let cancelled = false;
+    void fetchChatConversation(loadId)
+      .then((c) => {
+        if (cancelled || activeIdRef.current !== loadId || c.id !== loadId) return;
+        setConversation((prev) => {
+          if (prev?.id === c.id && prev.updatedAt > c.updatedAt) return prev;
+          return c;
+        });
+      })
+      .catch((e) => {
+        if (!cancelled && activeIdRef.current === loadId) {
+          setError(e instanceof Error ? e.message : "加载会话失败");
+        }
+      })
+      .finally(() => {
+        if (!cancelled && activeIdRef.current === loadId) {
+          setIsLoadingConversation(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [activeId]);
 
   useEffect(() => {
@@ -200,7 +240,7 @@ export function ChatWorkspace() {
 
   const handleImageModelChange = (id: ImageModelId) => {
     setSelectedImageModelId(id);
-    if (!conversation) return;
+    if (!conversation || conversation.id !== activeIdRef.current) return;
     const updated = { ...conversation, preferredImageModelId: id, updatedAt: Date.now() };
     setConversation(updated);
     void saveChatConversation(updated).catch((e) =>
@@ -212,38 +252,66 @@ export function ChatWorkspace() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [conversation?.messages, isSending]);
 
-  const isSkillEnabled = (packId: string) => {
-    if (!conversation) return true;
-    if (conversation.enabledSkillPackIds === undefined) return true;
-    return conversation.enabledSkillPackIds.includes(packId);
-  };
+  const selectedSkillPackId = conversationMatchesActive
+    ? (conversation?.enabledSkillPackIds?.[0] ?? null)
+    : null;
 
-  const toggleSkillPack = async (packId: string, checked: boolean) => {
-    if (!conversation) return;
-    const allIds = skillPacks.map((p) => p.id);
-    let nextIds: string[];
-    const cur = conversation.enabledSkillPackIds;
-    if (checked) {
-      nextIds = cur === undefined ? allIds : [...new Set([...cur, packId])];
-    } else {
-      nextIds = cur === undefined ? allIds.filter((id) => id !== packId) : cur.filter((id) => id !== packId);
+  const emptyGuideMarkdown = useMemo(() => {
+    if (!selectedSkillPackId) return buildChatEmptyGuideMarkdown(null);
+    const pack = skillPacks.find((p) => p.id === selectedSkillPackId);
+    return buildChatEmptyGuideMarkdown(pack);
+  }, [selectedSkillPackId, skillPacks]);
+
+  const selectSkillPack = async (packId: string | null) => {
+    if (isSavingSkill) return;
+    setError(null);
+    setIsSavingSkill(true);
+    let convId = activeIdRef.current;
+    let conv = conversation?.id === convId ? conversation : null;
+
+    if (!convId) {
+      const created = await createChatConversation();
+      convId = created.id;
+      conv = created;
+      activeIdRef.current = created.id;
+      setActiveId(created.id);
+      setSummaries((prev) => [{ id: created.id, title: created.title, updatedAt: created.updatedAt }, ...prev]);
     }
-    const allSelected =
-      allIds.length > 0 && nextIds.length === allIds.length && allIds.every((id) => nextIds.includes(id));
+
+    if (!conv) {
+      conv = await fetchChatConversation(convId);
+    }
+
+    const targetId = convId;
     const updated = {
-      ...conversation,
-      enabledSkillPackIds: allSelected ? undefined : nextIds,
+      ...conv,
+      enabledSkillPackIds: packId ? [packId] : undefined,
       updatedAt: Date.now(),
     };
-    const saved = await saveChatConversation(updated);
-    setConversation(saved);
+    if (activeIdRef.current === targetId) {
+      setConversation(updated);
+    }
+
+    try {
+      const saved = await saveChatConversation(updated);
+      if (activeIdRef.current === saved.id) {
+        setConversation(saved);
+      }
+    } catch (e) {
+      if (activeIdRef.current === convId) setConversation(conv);
+      throw e;
+    } finally {
+      setIsSavingSkill(false);
+    }
   };
 
   const handleNewChat = async () => {
     const c = await createChatConversation();
+    activeIdRef.current = c.id;
     setSummaries((prev) => [{ id: c.id, title: c.title, updatedAt: c.updatedAt }, ...prev]);
     setActiveId(c.id);
     setConversation(c);
+    setIsLoadingConversation(false);
     setError(null);
   };
 
@@ -291,39 +359,55 @@ export function ChatWorkspace() {
     setError(null);
     setIsSending(true);
 
+    const uid = `msg-${Date.now()}-u`;
+    const userParts: ChatMessage["parts"] = [];
+    if (trimmed) userParts.push({ type: "text", text: trimmed });
+    for (const att of pendingAttachments) {
+      const rid = `att-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      userParts.push({
+        type: "attachment",
+        attachment: { ...att, registryId: rid },
+      });
+    }
+
+    const userMessage: ChatMessage = {
+      id: uid,
+      role: "user",
+      createdAt: Date.now(),
+      parts: userParts,
+    };
+
+    const imageModelForTurn = selectedImageModelId;
+    setInputText("");
+    setPendingAttachments([]);
+
     try {
-      let convId = activeId;
-      let conv = conversation;
+      let convId = activeIdRef.current;
+      let conv = conversation?.id === convId ? conversation : null;
+
       if (!convId || !conv) {
         const created = await createChatConversation();
         convId = created.id;
         conv = created;
+        activeIdRef.current = created.id;
         setActiveId(created.id);
         setSummaries((prev) => [{ id: created.id, title: created.title, updatedAt: created.updatedAt }, ...prev]);
       }
 
-      const uid = `msg-${Date.now()}-u`;
-      const userParts: ChatMessage["parts"] = [];
-      if (trimmed) userParts.push({ type: "text", text: trimmed });
-      for (const att of pendingAttachments) {
-        const rid = `att-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-        userParts.push({
-          type: "attachment",
-          attachment: { ...att, registryId: rid },
-        });
+      const sendConvId = convId;
+      const optimistic: ChatConversation = {
+        ...conv,
+        messages: [...conv.messages, userMessage],
+        updatedAt: Date.now(),
+      };
+      if (activeIdRef.current === sendConvId) {
+        setConversation(optimistic);
       }
 
-      const userMessage: ChatMessage = {
-        id: uid,
-        role: "user",
-        createdAt: Date.now(),
-        parts: userParts,
-      };
+      const updated = await sendChatAgentTurn(sendConvId, userMessage, imageModelForTurn);
 
-      setInputText("");
-      setPendingAttachments([]);
+      if (activeIdRef.current !== sendConvId) return;
 
-      const updated = await sendChatAgentTurn(convId, userMessage, selectedImageModelId);
       setConversation(updated);
       setSummaries((prev) => {
         const row = { id: updated.id, title: updated.title, updatedAt: updated.updatedAt };
@@ -341,18 +425,32 @@ export function ChatWorkspace() {
     <div className={styles.stage}>
       <ChatSkillRail
         skillPacks={skillPacks}
-        activeConversationId={activeId}
-        isPackEnabled={isSkillEnabled}
-        onTogglePack={(id, on) => void toggleSkillPack(id, on).catch((e) => setError(String(e)))}
+        selectedPackId={selectedSkillPackId}
+        skillSwitchDisabled={isSavingSkill}
+        onSelectPack={(id) =>
+          void selectSkillPack(id).catch((e) =>
+            setError(e instanceof Error ? e.message : "保存 Skill 选择失败"),
+          )
+        }
       />
 
       <div ref={scrollRef} className={styles.messages}>
-        {!conversation?.messages.length ? (
-          <p className={styles.emptyChat}>开始新对话，可挂载 Skill、上传附件，Agent 可调用作图 API。</p>
+        {isLoadingConversation && activeId ? (
+          <p className={styles.sending}>加载会话…</p>
+        ) : !conversationMatchesActive ? null : !conversation?.messages.length ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyGuide}>
+              <ChatMarkdown markdown={emptyGuideMarkdown} variant="guide" />
+            </div>
+          </div>
         ) : (
-          conversation.messages.map((m) => <MessageBubble key={m.id} msg={m} />)
+          <div className={styles.messageList}>
+            {conversation.messages.map((m) => (
+              <MessageBubble key={m.id} msg={m} />
+            ))}
+          </div>
         )}
-        {isSending ? <p className={styles.sending}>思考中…</p> : null}
+        {isSending && conversationMatchesActive ? <p className={styles.sending}>思考中…</p> : null}
       </div>
 
       <ChatComposer

@@ -15,21 +15,19 @@ function displayTitle(title: string): string {
 /** 与 /image 左侧 mode 栏同结构、同样式（复用 image-page.module.css） */
 export function ChatSkillRail({
   skillPacks,
-  activeConversationId,
-  isPackEnabled,
-  onTogglePack,
+  selectedPackId,
+  onSelectPack,
+  skillSwitchDisabled = false,
 }: {
   skillPacks: SkillPackRecord[];
-  activeConversationId: string | null;
-  isPackEnabled: (packId: string) => boolean;
-  onTogglePack: (packId: string, enabled: boolean) => void;
+  /** null 表示「无」、不挂载 Skill */
+  selectedPackId: string | null;
+  onSelectPack: (packId: string | null) => void;
+  /** 保存 Skill 选择进行中时禁用，避免连点 */
+  skillSwitchDisabled?: boolean;
 }) {
-  const items =
-    skillPacks.length === 0
-      ? [{ kind: "link" as const, id: "__settings__", label: "添加 Skill", href: "/settings?tab=skillPacks" }]
-      : skillPacks.map((p) => ({ kind: "skill" as const, pack: p }));
-
-  const faded = items.length > 7;
+  const noneActive = selectedPackId === null;
+  const faded = skillPacks.length + 1 > 7;
 
   return (
     <aside className={imageStyles.modePanel} aria-label="Skill">
@@ -43,28 +41,36 @@ export function ChatSkillRail({
             >
               <div className={imageStyles.modeScroll}>
                 <div className={imageStyles.modeList}>
-                  {items.map((item) => {
-                    if (item.kind === "link") {
-                      return (
-                        <Link
-                          key={item.id}
-                          href={item.href}
-                          className={[imageStyles.modeButton, railStyles.railCard].join(" ")}
-                        >
-                          <span className={imageStyles.modeName}>{item.label}</span>
-                        </Link>
-                      );
-                    }
-                    const p = item.pack;
-                    const active = isPackEnabled(p.id);
+                  <button
+                    type="button"
+                    disabled={skillSwitchDisabled}
+                    title="不使用 Skill"
+                    onClick={() => onSelectPack(null)}
+                    className={[
+                      imageStyles.modeButton,
+                      railStyles.railCard,
+                      noneActive ? imageStyles.modeButtonActive : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    <span className={imageStyles.modeName}>无</span>
+                  </button>
+
+                  {skillPacks.map((p) => {
+                    const active = selectedPackId === p.id;
                     return (
                       <button
                         key={p.id}
                         type="button"
-                        disabled={!activeConversationId}
+                        disabled={skillSwitchDisabled}
                         title={skillPackDisplayLabel(p)}
-                        onClick={() => onTogglePack(p.id, !active)}
-                        className={[imageStyles.modeButton, railStyles.railCard, active ? imageStyles.modeButtonActive : ""]
+                        onClick={() => onSelectPack(p.id)}
+                        className={[
+                          imageStyles.modeButton,
+                          railStyles.railCard,
+                          active ? imageStyles.modeButtonActive : "",
+                        ]
                           .filter(Boolean)
                           .join(" ")}
                       >
@@ -72,6 +78,15 @@ export function ChatSkillRail({
                       </button>
                     );
                   })}
+
+                  {skillPacks.length === 0 ? (
+                    <Link
+                      href="/settings?tab=skillPacks"
+                      className={[imageStyles.modeButton, railStyles.railCard].join(" ")}
+                    >
+                      <span className={imageStyles.modeName}>添加 Skill</span>
+                    </Link>
+                  ) : null}
                 </div>
               </div>
             </div>

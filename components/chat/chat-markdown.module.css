@@ -4,6 +4,31 @@
   color: #e4e4e7;
 }
 
+.h2 {
+  margin: 0 0 0.65em;
+  font-size: 15px;
+  font-weight: 600;
+  color: #e4e4e7;
+  text-align: center;
+}
+
+.h3 {
+  margin: 1em 0 0.5em;
+  font-size: 13px;
+  font-weight: 600;
+  color: #d4d4d8;
+}
+
+.ul,
+.ol {
+  margin: 0 0 0.75em;
+  padding-left: 1.25em;
+}
+
+.li {
+  margin: 0.25em 0;
+}
+
 .p {
   margin: 0 0 0.75em;
 }
@@ -42,4 +67,62 @@
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   object-fit: contain;
+}
+
+/* 对话页空状态说明：整块居中，正文左对齐（避免居中换行参差不齐） */
+.rootGuide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  opacity: 0.62;
+  color: #a1a1aa;
+  line-height: 1.65;
+}
+
+.rootGuide > * {
+  width: 100%;
+  max-width: 22rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.rootGuide .h2,
+.rootGuide .h3 {
+  text-align: center;
+  color: inherit;
+}
+
+.rootGuide .h2 {
+  font-weight: 500;
+}
+
+.rootGuide .p,
+.rootGuide .h3,
+.rootGuide .li {
+  text-align: center;
+  text-wrap: pretty;
+}
+
+.rootGuide .ul,
+.rootGuide .ol {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 0;
+  list-style-position: inside;
+  text-align: center;
+}
+
+.rootGuide .link {
+  color: #9ca3af;
+}
+
+.rootGuide .codeInline {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.rootGuide .pre {
+  text-align: left;
+  opacity: 0.9;
 }

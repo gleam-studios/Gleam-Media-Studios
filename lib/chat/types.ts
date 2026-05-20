@@ -38,8 +38,10 @@ export interface SkillPackRecord {
   id: string;
   /** ZIP 文件名（管理用，不可在设置页修改） */
   title: string;
-  /** 对话页左侧 Skill 条显示名；导入时由 ZIP 内目录名决定，不可在设置里改 */
+  /** 对话页左侧 Skill 条显示名；可在设置里修改 */
   displayLabel: string;
+  /** 对话页空状态展示的使用说明（Markdown，在设置里填写） */
+  chatUsageHint?: string;
   importedAt: number;
   skills: SkillDocument[];
 }
@@ -59,6 +61,7 @@ export interface ChatConversation {
   title: string;
   updatedAt: number;
   messages: ChatMessage[];
+  /** 至多一个 Skill 包；缺省或空表示「无」、不挂载 Skill */
   enabledSkillPackIds?: string[];
   attachments?: ConversationAttachmentEntry[];
   /** 对话 Agent 调用 generate_image 时的默认作图模型 */

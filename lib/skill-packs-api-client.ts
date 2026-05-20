@@ -28,20 +28,27 @@ export async function importSiteSkillPack(file: File): Promise<SkillPackRecord> 
   return data.skillPack;
 }
 
-export async function updateSiteSkillPackDisplayLabelApi(
+export async function updateSiteSkillPackApi(
   id: string,
-  displayLabel: string,
+  patch: { displayLabel?: string; chatUsageHint?: string },
 ): Promise<SkillPackRecord> {
   const res = await fetch("/api/site-skill-packs", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id, displayLabel }),
+    body: JSON.stringify({ id, ...patch }),
   });
   if (!res.ok) {
-    throw new Error(await readApiError(res, "无法保存显示名"));
+    throw new Error(await readApiError(res, "无法保存 Skill 包"));
   }
   const data = (await res.json()) as { skillPack: SkillPackRecord };
   return data.skillPack;
+}
+
+export async function updateSiteSkillPackDisplayLabelApi(
+  id: string,
+  displayLabel: string,
+): Promise<SkillPackRecord> {
+  return updateSiteSkillPackApi(id, { displayLabel });
 }
 
 export async function deleteSiteSkillPackApi(id: string): Promise<void> {

@@ -15,16 +15,13 @@ function getSkillMarkdownBlocks(
   enabledIds: string[] | undefined,
   allPacks: SkillPackRecord[],
 ): string[] {
-  if (allPacks.length === 0) return [];
-  const activePacks =
-    enabledIds === undefined ? allPacks : allPacks.filter((p) => enabledIds.includes(p.id));
-  const blocks: string[] = [];
-  for (const pack of activePacks) {
-    for (const s of pack.skills) {
-      blocks.push(`### Skill「${s.name}」（包: ${pack.title}）\n\n${s.markdown}`);
-    }
-  }
-  return blocks;
+  const packId = enabledIds?.[0];
+  if (!packId) return [];
+  const pack = allPacks.find((p) => p.id === packId);
+  if (!pack) return [];
+  return pack.skills.map(
+    (s) => `### Skill「${s.name}」（包: ${pack.title}）\n\n${s.markdown}`,
+  );
 }
 
 type AgentBody = {
