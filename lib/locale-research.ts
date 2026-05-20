@@ -1,4 +1,5 @@
 import { completeChatNonStream } from "./openai-completion";
+import { buildCreativeDirectionContext } from "./creative-directions";
 import type { Project, ProjectMeta, Settings } from "./types";
 
 function excerpt(text: string, max: number): string {
@@ -61,6 +62,9 @@ function buildUserContent(project: Project): string {
 
   return [
     "【请根据以下材料起草《英语 Locale 简报》】",
+    "",
+    "【创作方向】",
+    buildCreativeDirectionContext(project.creativeDirectionId),
     "",
     "【立项元数据】",
     metaLines(project.meta, name),

@@ -4,6 +4,7 @@ import type { Artifact, Message, ProjectMeta } from "./types";
 import { detectStage } from "./stage-detect";
 import { evaluateStageGate, parseEventEpisodeRange } from "./stage-gate";
 import { parseTargetEpisodeCount } from "./stage5-pipeline";
+import { buildCreativeDirectionContext } from "./creative-directions";
 import {
   CREATIVE_BRIEF_CONTEXT_CHARS,
   ENGLISH_LOCALE_BRIEF_CONTEXT_CHARS,
@@ -131,6 +132,8 @@ export function buildProjectContext(params: {
   creativeBrief?: string;
   /** 立项模式；缺省视为原创 */
   originMode?: "original" | "adaptation";
+  /** 创作方向包；缺省回退到 bl-short-drama */
+  creativeDirectionId?: string;
   /** 改编：原文分析极短摘要（控 token） */
   sourceAnalysisExcerpt?: string;
   /** 项目级系列圣经；完整正文以侧栏为准，此处为节录注入 */
@@ -145,6 +148,7 @@ export function buildProjectContext(params: {
     meta,
     creativeBrief,
     originMode,
+    creativeDirectionId,
     sourceAnalysisExcerpt,
     seriesBible,
     englishLocaleBrief,
@@ -153,6 +157,8 @@ export function buildProjectContext(params: {
   const approved = maxApprovedStage ?? 0;
 
   const parts: string[] = [];
+
+  parts.push(`[创作方向]\n${buildCreativeDirectionContext(creativeDirectionId)}`);
 
   const mode = originMode ?? "original";
   if (mode === "adaptation") {
@@ -240,5 +246,5 @@ export function buildProjectContext(params: {
     );
   }
 
-  return parts.join("");
+  return parts.filter(Boolean).join("\n");
 }

@@ -5,6 +5,7 @@ import { completeEnglishLocaleBrief } from "@/lib/locale-research";
 import { getProject, saveProject } from "@/lib/project-store";
 import { loadAdaptationPlannerPrompt } from "@/lib/prompt-loader";
 import { completeSeriesBibleLlm } from "@/lib/series-bible-llm";
+import { buildCreativeDirectionContext } from "@/lib/creative-directions";
 import type { Message, OnboardingStatus, Project, ProjectMeta, Settings } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -83,7 +84,7 @@ export async function POST(req: NextRequest) {
     planningMessages: [],
   });
 
-  const systemContent = `${base}\n\n---\n【立项上下文】\n${bootstrap.trim()}`;
+  const systemContent = `${base}\n\n---\n【创作方向】\n${buildCreativeDirectionContext(project.creativeDirectionId)}\n\n---\n【立项上下文】\n${bootstrap.trim()}`;
 
   const planResult = await completeChatNonStream({
     settings,

@@ -1,0 +1,63 @@
+{
+  "id": "script-agent-core",
+  "status": "shadow",
+  "runtimeLoaded": false,
+  "description": "Review-only shared screenplay workflow layer. Production prompt loading must not read this manifest automatically.",
+  "modules": [
+    {
+      "id": "deliverable-markdown",
+      "path": "core/prompts/deliverable-markdown.md",
+      "category": "CORE",
+      "sourceLegacyFiles": [
+        "agent/script-agent/prompts/deliverable-markdown.md",
+        "agent/script-agent/templates/Settings Template.md"
+      ]
+    },
+    {
+      "id": "stage-protocol",
+      "path": "core/prompts/stage-protocol.md",
+      "category": "CORE",
+      "sourceLegacyFiles": [
+        "agent/script-agent/prompts/flowchart.md",
+        "agent/script-agent/prompts/main_prompt.md",
+        "agent/script-agent/prompts/script-planning-agent-role.md"
+      ]
+    },
+    {
+      "id": "project-context",
+      "path": "core/prompts/project-context.md",
+      "category": "PROJECT_CONTEXT",
+      "sourceLegacyFiles": [
+        "agent/script-agent/prompts/generate-series-bible.md",
+        "agent/script-agent/prompts/generate-settings.md",
+        "agent/script-agent/templates/Settings Template.md",
+        "lib/project-context.ts",
+        "lib/stage-gate.ts"
+      ]
+    },
+    {
+      "id": "adaptation-workflow",
+      "path": "core/prompts/adaptation-workflow.md",
+      "category": "CORE",
+      "sourceLegacyFiles": [
+        "agent/script-agent/prompts/adaptation-analyze.md",
+        "agent/script-agent/prompts/adaptation-discuss.md",
+        "agent/script-agent/prompts/adaptation-planner.md"
+      ]
+    },
+    {
+      "id": "continuity-pass",
+      "path": "core/skills/continuity-pass.md",
+      "category": "CORE",
+      "sourceLegacyFiles": [
+        "agent/script-agent/skills/skill-continuity-pass.md",
+        "agent/script-agent/context_assets/character_reference.md"
+      ]
+    }
+  ],
+  "loaderPolicy": {
+    "mayAutoLoad": false,
+    "requiresExplicitLoaderFlag": true,
+    "notes": "Future loader work must prove parity before enabling this layer for any creative direction."
+  }
+}

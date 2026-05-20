@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { fetchWithRetry } from "@/lib/fetch-with-retry";
 import { loadAdaptationDiscussPrompt } from "@/lib/prompt-loader";
+import { buildCreativeDirectionContext } from "@/lib/creative-directions";
 import type { Message, Settings } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -8,6 +9,7 @@ export const runtime = "nodejs";
 interface Body {
   messages: Message[];
   settings: Settings;
+  creativeDirectionId?: string;
   /** 与策划会话一致：附在系统提示后的上下文块 */
   planningBootstrap: string;
 }
@@ -20,7 +22,7 @@ export async function POST(req: NextRequest) {
     return new Response("Invalid JSON", { status: 400 });
   }
 
-  const { messages, settings, planningBootstrap } = body;
+  const { messages, settings, creativeDirectionId, planningBootstrap } = body;
 
   if (!settings?.apiKey) {
     return new Response(
@@ -30,10 +32,11 @@ export async function POST(req: NextRequest) {
   }
 
   const base = loadAdaptationDiscussPrompt();
+  const directionContext = buildCreativeDirectionContext(creativeDirectionId);
   const systemContent =
     planningBootstrap && planningBootstrap.trim().length > 0
-      ? `${base}\n\n---\n【原文与立项上下文】\n${planningBootstrap.trim()}`
-      : base;
+      ? `${base}\n\n---\n【创作方向】\n${directionContext}\n\n---\n【原文与立项上下文】\n${planningBootstrap.trim()}`
+      : `${base}\n\n---\n【创作方向】\n${directionContext}`;
 
   const apiMessages = [{ role: "system" as const, content: systemContent }, ...messages];
 

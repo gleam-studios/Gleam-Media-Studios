@@ -1,12 +1,19 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  ensureProjectCreativeDirection,
+  getCreativeDirection,
+} from "@/lib/creative-directions";
 import { migrateStage5To7 } from "@/lib/project-migrate";
 import type { Project, ProjectSummary } from "@/lib/types";
 
 function toSummary(project: Project): ProjectSummary {
+  const direction = getCreativeDirection(project.creativeDirectionId);
   return {
     id: project.id,
     name: project.name,
     updatedAt: project.updatedAt,
+    creativeDirectionId: direction.id,
+    creativeDirectionLabel: direction.shortLabel || direction.label,
     currentStage: project.currentStage,
     onboardingStatus: project.onboardingStatus,
     originMode: project.originMode,
@@ -43,7 +50,10 @@ export async function getProject(supabase: SupabaseClient, id: string): Promise<
   if (!data?.data) return null;
 
   const project = data.data as Project;
-  if (migrateStage5To7(project)) {
+  const migrated = migrateStage5To7(project);
+  const directionChanged = ensureProjectCreativeDirection(project);
+  const changed = migrated || directionChanged;
+  if (changed) {
     await saveProject(supabase, project);
   }
   return project;
@@ -57,6 +67,7 @@ export async function saveProject(supabase: SupabaseClient, project: Project): P
 
   project.updatedAt = new Date().toISOString();
   migrateStage5To7(project);
+  ensureProjectCreativeDirection(project);
 
   const { error } = await supabase.from("projects").upsert(
     {
@@ -87,6 +98,7 @@ export async function saveProjectForUser(
 ): Promise<void> {
   project.updatedAt = project.updatedAt || new Date().toISOString();
   migrateStage5To7(project);
+  ensureProjectCreativeDirection(project);
 
   const { error } = await supabase.from("projects").upsert(
     {

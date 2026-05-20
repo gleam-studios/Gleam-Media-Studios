@@ -8,6 +8,7 @@ export const runtime = "nodejs";
 interface ChatRequestBody {
   messages: Message[];
   settings: Settings;
+  creativeDirectionId?: string;
   /** 工程侧项目状态（验收、圣经等），追加在系统提示后 */
   projectContext?: string;
 }
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
     return new Response("Invalid JSON", { status: 400 });
   }
 
-  const { messages, settings, projectContext } = body;
+  const { messages, settings, creativeDirectionId, projectContext } = body;
 
   if (!settings?.apiKey) {
     return new Response(
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const systemPrompt = loadSystemPrompt();
+  const systemPrompt = loadSystemPrompt(creativeDirectionId);
   const systemContent =
     projectContext && projectContext.trim().length > 0
       ? `${systemPrompt}\n\n---\n【工程注入 · 须服从】\n${projectContext.trim()}`

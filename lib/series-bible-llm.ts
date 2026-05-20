@@ -4,6 +4,7 @@ import {
   ADAPTATION_SOURCE_ANALYSIS_INJECT_CHARS,
   PLANNING_EXCERPT_PER_MATERIAL,
 } from "@/lib/source-materials";
+import { buildCreativeDirectionContext } from "@/lib/creative-directions";
 import type { Project, ProjectMeta, Settings, SourceMaterial } from "@/lib/types";
 
 const USER_SERIES_BIBLE_REQUEST =
@@ -43,6 +44,9 @@ export function buildSeriesBibleUserContext(project: Project): string {
   const name = project.name?.trim() || "未命名项目";
   const brief = (project.creativeBrief ?? "").trim();
   const parts: string[] = [
+    "【创作方向】",
+    buildCreativeDirectionContext(project.creativeDirectionId),
+    "",
     "【立项元数据】",
     metaLines(meta, name),
     "",

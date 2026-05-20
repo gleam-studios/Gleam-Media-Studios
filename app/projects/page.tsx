@@ -182,6 +182,11 @@ function ProjectsHubInner() {
                       <h2 className={styles.projectTitle}>{p.name}</h2>
                       <p className={styles.projectStage}>{stageLabel}</p>
                       <div className={styles.projectMeta}>
+                        {p.creativeDirectionLabel ? (
+                          <span className={shellStyles.metaPill} title="创作方向">
+                            {p.creativeDirectionLabel}
+                          </span>
+                        ) : null}
                         <span
                           className={[
                             shellStyles.metaPill,

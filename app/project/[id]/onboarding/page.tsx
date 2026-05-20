@@ -16,6 +16,14 @@ import { useApiSettings } from "@/components/ApiSettingsProvider";
 import PlanningChatPanel from "@/components/PlanningChatPanel";
 import { buildAdaptationDiscussBootstrap, buildPlanningBootstrap } from "@/lib/planning-bootstrap";
 import {
+  DEFAULT_CREATIVE_DIRECTION_ID,
+  applyCreativeDirectionDefaultsToMeta,
+  getCreativeDirection,
+  isCreativeDirectionLocked,
+  listCreativeDirections,
+  normalizeCreativeDirectionId,
+} from "@/lib/creative-directions";
+import {
   SOURCE_MATERIALS_MAX_CHARS,
   assertSourceMaterialsWithinLimit,
   totalSourceChars,
@@ -42,14 +50,14 @@ const TAB_ORDER: TabId[] = ["meta", "materials", "planning", "finalize"];
 
 function normalizeMeta(p: Project): ProjectMeta {
   const m = p.meta;
-  return {
+  return applyCreativeDirectionDefaultsToMeta({
     seriesTitle: m?.seriesTitle ?? p.name ?? "",
     episodeCount: m?.episodeCount ?? "",
     episodeDurationMinutes: m?.episodeDurationMinutes ?? null,
     targetMarket: m?.targetMarket ?? "",
     dialogueLanguage: m?.dialogueLanguage ?? "",
     extraNotes: m?.extraNotes ?? "",
-  };
+  }, p.creativeDirectionId);
 }
 
 function effectiveAdaptPhase(p: Project): AdaptationPhase {
@@ -66,6 +74,7 @@ export default function OnboardingPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>("meta");
   const [originTab, setOriginTab] = useState<OriginMode>("original");
+  const [creativeDirectionId, setCreativeDirectionId] = useState(DEFAULT_CREATIVE_DIRECTION_ID);
   const [adaptPhase, setAdaptPhase] = useState<AdaptationPhase>("idle");
 
   const [meta, setMeta] = useState<ProjectMeta>({
@@ -98,6 +107,12 @@ export default function OnboardingPage() {
     adaptationMessagesRef.current = adaptationMessages;
   }, [adaptationMessages]);
 
+  const creativeDirectionOptions = useMemo(() => listCreativeDirections(), []);
+  const selectedCreativeDirection = useMemo(
+    () => getCreativeDirection(creativeDirectionId),
+    [creativeDirectionId]
+  );
+
   const planningBootstrap = useMemo(() => buildPlanningBootstrap(meta, materials), [meta, materials]);
 
   const adaptationDiscussBootstrap = useMemo(
@@ -114,7 +129,9 @@ export default function OnboardingPage() {
         return;
       }
       const p: Project = await res.json();
+      const directionId = normalizeCreativeDirectionId(p.creativeDirectionId);
       setProject(p);
+      setCreativeDirectionId(directionId);
       setMeta(normalizeMeta(p));
       setMaterials(p.sourceMaterials ?? []);
       setPlanningMessages(p.planningMessages ?? []);
@@ -191,6 +208,17 @@ export default function OnboardingPage() {
 
   function updateMeta<K extends keyof ProjectMeta>(key: K, value: ProjectMeta[K]) {
     setMeta((m) => ({ ...m, [key]: value }));
+  }
+
+  function handleCreativeDirectionChange(next: string) {
+    const normalized = normalizeCreativeDirectionId(next);
+    if (normalized === creativeDirectionId) return;
+    if (project && isCreativeDirectionLocked(project)) {
+      alert("创作方向已锁定：项目已有确认书、系列圣经、对话或产物，不能直接切换方向。");
+      return;
+    }
+    setCreativeDirectionId(normalized);
+    setMeta((m) => applyCreativeDirectionDefaultsToMeta(m, normalized));
   }
 
   function requestOriginTab(next: OriginMode) {
@@ -319,6 +347,7 @@ export default function OnboardingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: meta.seriesTitle.trim(),
+          creativeDirectionId,
           meta: { ...meta, seriesTitle: meta.seriesTitle.trim() },
           sourceMaterials: materials,
           onboardingStatus: project?.onboardingStatus === "ready" ? "ready" : "planning",
@@ -481,7 +510,7 @@ export default function OnboardingPage() {
     }
     const fallback = project?.name?.trim() || meta.seriesTitle?.trim() || "未命名项目";
     const { meta: parsed, warnings } = parseCreativeBriefToProjectMeta(brief, fallback);
-    setMeta(parsed);
+    setMeta(applyCreativeDirectionDefaultsToMeta(parsed, creativeDirectionId));
     if (warnings.length) {
       alert(`${warnings.join("\n")}\n\n请核对「基本信息」tab；若缺节可在确认书文末补上「## 立项字段（系统自动识别）」及键值行。`);
     }
@@ -503,6 +532,7 @@ export default function OnboardingPage() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          creativeDirectionId,
           sourceMaterials: materials,
           originMode: "adaptation",
           adaptationPhase: "upload",
@@ -639,6 +669,7 @@ export default function OnboardingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: meta.seriesTitle.trim(),
+          creativeDirectionId,
           meta: { ...meta, seriesTitle: meta.seriesTitle.trim() },
           onboardingStatus: "ready",
           originMode: isAdapt ? "adaptation" : "original",
@@ -692,6 +723,13 @@ export default function OnboardingPage() {
   const status = project?.onboardingStatus ?? "ready";
   const serverMode = project?.originMode ?? "original";
   const isAdaptationUi = originTab === "adaptation";
+  const creativeDirectionLocked = project
+    ? isCreativeDirectionLocked({
+        ...project,
+        creativeBrief,
+        seriesBible: seriesBibleDraft,
+      })
+    : false;
   const phase: AdaptationPhase =
     isAdaptationUi && serverMode !== "adaptation" ? "upload" : isAdaptationUi ? adaptPhase : "idle";
   const totalChars = totalSourceChars(materials);
@@ -829,6 +867,24 @@ export default function OnboardingPage() {
                       placeholder="例如：南风识"
                       className={shellStyles.input}
                     />
+                  </label>
+                  <label className={shellStyles.field}>
+                    <span className={shellStyles.fieldLabel}>创作方向</span>
+                    <select
+                      value={creativeDirectionId}
+                      onChange={(e) => handleCreativeDirectionChange(e.target.value)}
+                      disabled={creativeDirectionLocked}
+                      className={shellStyles.select}
+                    >
+                      {creativeDirectionOptions.map((direction) => (
+                        <option key={direction.id} value={direction.id}>
+                          {direction.label}
+                        </option>
+                      ))}
+                    </select>
+                    <span className={shellStyles.helpText}>
+                      {creativeDirectionLocked ? "已锁定" : selectedCreativeDirection.shortLabel}
+                    </span>
                   </label>
                   <label className={shellStyles.field}>
                     <span className={shellStyles.fieldLabel}>目标集数 / 区间</span>
@@ -1041,6 +1097,7 @@ export default function OnboardingPage() {
                     settings={settings}
                     messages={planningMessages}
                     planningBootstrap={planningBootstrap}
+                    extraBody={{ creativeDirectionId }}
                     onOpenSettings={() => openSettings()}
                     onMessagesChange={setPlanningMessages}
                     onAssistantDone={handlePlanningAssistantDone}
@@ -1098,6 +1155,7 @@ export default function OnboardingPage() {
                     messages={adaptationMessages}
                     planningBootstrap={adaptationDiscussBootstrap}
                     chatEndpoint="/api/adaptation-discuss"
+                    extraBody={{ creativeDirectionId }}
                     onOpenSettings={() => openSettings()}
                     onMessagesChange={setAdaptationMessages}
                     onAssistantDone={handleAdaptationAssistantDone}

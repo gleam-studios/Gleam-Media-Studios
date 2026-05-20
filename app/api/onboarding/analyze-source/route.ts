@@ -3,6 +3,7 @@ import { getProject, saveProject } from "@/lib/project-store";
 import { loadAdaptationAnalyzePrompt } from "@/lib/prompt-loader";
 import { completeChatNonStream } from "@/lib/openai-completion";
 import { totalSourceChars } from "@/lib/source-materials";
+import { buildCreativeDirectionContext } from "@/lib/creative-directions";
 import type { OnboardingStatus, Project, Settings } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -50,12 +51,13 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "分析提示词未加载" }, { status: 500 });
   }
 
+  const systemContent = `${system}\n\n---\n【创作方向】\n${buildCreativeDirectionContext(project.creativeDirectionId)}`;
   const userContent = `以下是需要分析的原文（项目内素材合计约 ${total} 字）：\n\n${raw}`;
 
   const result = await completeChatNonStream({
     settings,
     messages: [
-      { role: "system", content: system },
+      { role: "system", content: systemContent },
       { role: "user", content: userContent },
     ],
     temperature: 0.2,

@@ -17,6 +17,9 @@
     "start": "next start -H 0.0.0.0",
     "lint": "eslint",
     "smoke:extract-stage5": "npx tsx lib/artifact-extract.stage5.smoke.ts",
+    "smoke:direction-shadow": "npx tsx scripts/check-script-agent-direction-shadow.ts",
+    "smoke:prompt-parity": "npx tsx scripts/check-script-agent-prompt-parity.ts",
+    "report:script-agent-migration": "npx tsx scripts/report-script-agent-migration-readiness.ts",
     "migrate:supabase": "npx tsx scripts/migrate-local-data-to-supabase.ts",
     "db:push": "npx tsx scripts/push-supabase-migrations.ts"
   },

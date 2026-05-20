@@ -20,6 +20,7 @@ import {
 import { detectStage, detectStageFromContent } from "@/lib/stage-detect";
 import { evaluateStageGate } from "@/lib/stage-gate";
 import { buildProjectContext } from "@/lib/project-context";
+import { DEFAULT_CREATIVE_DIRECTION_ID, normalizeCreativeDirectionId } from "@/lib/creative-directions";
 import { downloadArtifactsZip } from "@/lib/export-artifacts";
 import { SOURCE_ANALYSIS_CONTEXT_CHARS } from "@/lib/source-materials";
 import { getStudioAutoStageUserMessage, STUDIO_AUTO_STAGE1_USER_MESSAGE } from "@/lib/studio-auto-kickoff";
@@ -86,6 +87,7 @@ function StudioInner() {
   const [englishLocaleBrief, setEnglishLocaleBrief] = useState("");
   const [onboardingStatus, setOnboardingStatus] = useState<OnboardingStatus | null>(null);
   const [projectOriginMode, setProjectOriginMode] = useState<OriginMode>("original");
+  const [creativeDirectionId, setCreativeDirectionId] = useState(DEFAULT_CREATIVE_DIRECTION_ID);
   const [projectSourceAnalysis, setProjectSourceAnalysis] = useState("");
 
   const [bibleDrawerOpen, setBibleDrawerOpen] = useState(false);
@@ -143,6 +145,7 @@ function StudioInner() {
       meta: projectMeta ?? undefined,
       creativeBrief,
       originMode: om,
+      creativeDirectionId,
       sourceAnalysisExcerpt: excerpt,
       seriesBible,
       englishLocaleBrief,
@@ -154,6 +157,7 @@ function StudioInner() {
     projectMeta,
     creativeBrief,
     projectOriginMode,
+    creativeDirectionId,
     projectSourceAnalysis,
     seriesBible,
     englishLocaleBrief,
@@ -185,6 +189,7 @@ function StudioInner() {
       setEnglishLocaleBrief(p.englishLocaleBrief ?? "");
       setOnboardingStatus(p.onboardingStatus ?? "ready");
       setProjectOriginMode(p.originMode ?? "original");
+      setCreativeDirectionId(normalizeCreativeDirectionId(p.creativeDirectionId));
       setProjectSourceAnalysis(p.sourceAnalysis ?? "");
       setInitialLoadComplete(true);
     } catch {
@@ -1205,6 +1210,7 @@ function StudioInner() {
             settings={settings}
             messages={messages}
             projectId={projectId}
+            creativeDirectionId={creativeDirectionId}
             projectContext={projectContext}
             onOpenSettings={openSettings}
             onMessagesChange={handleMessagesChange}

@@ -1,6 +1,10 @@
 import { loadPrefillMetaPrompt } from "@/lib/prompt-loader";
 import { completeChatNonStream } from "@/lib/openai-completion";
 import {
+  applyCreativeDirectionDefaultsToMeta,
+  buildCreativeDirectionContext,
+} from "@/lib/creative-directions";
+import {
   ADAPTATION_DISCUSSION_FOR_PLANNER_CHARS,
   ADAPTATION_PLANNING_EXCERPT_CHARS,
   ADAPTATION_SOURCE_ANALYSIS_INJECT_CHARS,
@@ -80,7 +84,10 @@ export async function generatePrefillMetaFromProject(
   | { ok: false; error: string; meta: ProjectMeta; prefillWarning?: string }
 > {
   const fallbackName = project.name ?? "";
-  const emptyMeta = normalizeMeta(null, fallbackName);
+  const emptyMeta = applyCreativeDirectionDefaultsToMeta(
+    normalizeMeta(null, fallbackName),
+    project.creativeDirectionId,
+  );
 
   const system = loadPrefillMetaPrompt();
   if (!system.trim()) {
@@ -101,6 +108,9 @@ export async function generatePrefillMetaFromProject(
   if (fromBriefOnly) {
     const briefBody = excerpt(effectiveBrief, PREFILL_FROM_BRIEF_MAX_CHARS);
     userContent = [
+      "### 创作方向",
+      buildCreativeDirectionContext(project.creativeDirectionId),
+      "",
       "请**主要**根据下列《创作思路确认书》抽取立项元数据 JSON 对象，字段含：",
       "seriesTitle（剧名）、episodeCount（集数或区间描述）、episodeDurationMinutes（数字或 null）、",
       "targetMarket、dialogueLanguage、extraNotes。",
@@ -112,6 +122,9 @@ export async function generatePrefillMetaFromProject(
     ].join("\n");
   } else {
     const ctxParts: string[] = [];
+    ctxParts.push("### 创作方向");
+    ctxParts.push(buildCreativeDirectionContext(project.creativeDirectionId));
+    ctxParts.push("");
     ctxParts.push("### 原文分析（摘录）");
     ctxParts.push(excerpt(project.sourceAnalysis ?? "", ADAPTATION_SOURCE_ANALYSIS_INJECT_CHARS) || "（无）");
     ctxParts.push("");
@@ -146,6 +159,9 @@ export async function generatePrefillMetaFromProject(
   }
 
   const parsed = parseMetaJson(result.content);
-  const meta = normalizeMeta(parsed, fallbackName);
+  const meta = applyCreativeDirectionDefaultsToMeta(
+    normalizeMeta(parsed, fallbackName),
+    project.creativeDirectionId,
+  );
   return { ok: true, meta };
 }

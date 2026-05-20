@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { fetchWithRetry } from "@/lib/fetch-with-retry";
 import { loadAdaptationPlannerPrompt, loadPlanningSessionPrompt } from "@/lib/prompt-loader";
+import { buildCreativeDirectionContext } from "@/lib/creative-directions";
 import type { Message, Settings } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -10,6 +11,7 @@ export type PlanningSessionKind = "planning" | "adaptation_planner";
 interface PlanningChatBody {
   messages: Message[];
   settings: Settings;
+  creativeDirectionId?: string;
   /** 立项元数据 + 素材节选，拼在系统提示后 */
   planningBootstrap: string;
   /** 改编线规划师阶段使用 adaptation_planner */
@@ -24,7 +26,7 @@ export async function POST(req: NextRequest) {
     return new Response("Invalid JSON", { status: 400 });
   }
 
-  const { messages, settings, planningBootstrap, sessionKind = "planning" } = body;
+  const { messages, settings, creativeDirectionId, planningBootstrap, sessionKind = "planning" } = body;
 
   if (!settings?.apiKey) {
     return new Response(
@@ -35,10 +37,11 @@ export async function POST(req: NextRequest) {
 
   const base =
     sessionKind === "adaptation_planner" ? loadAdaptationPlannerPrompt() : loadPlanningSessionPrompt();
+  const directionContext = buildCreativeDirectionContext(creativeDirectionId);
   const systemContent =
     planningBootstrap && planningBootstrap.trim().length > 0
-      ? `${base}\n\n---\n【立项素材与元数据】\n${planningBootstrap.trim()}`
-      : base;
+      ? `${base}\n\n---\n【创作方向】\n${directionContext}\n\n---\n【立项素材与元数据】\n${planningBootstrap.trim()}`
+      : `${base}\n\n---\n【创作方向】\n${directionContext}`;
 
   const apiMessages = [{ role: "system" as const, content: systemContent }, ...messages];
 

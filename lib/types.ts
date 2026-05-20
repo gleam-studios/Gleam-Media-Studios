@@ -65,6 +65,8 @@ export interface Project {
   name: string;
   createdAt: string;
   updatedAt: string;
+  /** 创作方向包 ID；旧项目缺省视为 bl-short-drama */
+  creativeDirectionId?: string;
   currentStage: number;
   messages: Message[];
   artifacts: Artifact[];
@@ -100,6 +102,8 @@ export interface ProjectSummary {
   id: string;
   name: string;
   updatedAt: string;
+  creativeDirectionId?: string;
+  creativeDirectionLabel?: string;
   currentStage: number;
   onboardingStatus?: OnboardingStatus;
   originMode?: OriginMode;

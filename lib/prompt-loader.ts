@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { resolveAgentRoot } from "./agent-paths";
+import { getCreativeDirection, normalizeCreativeDirectionId } from "./creative-directions";
 
 const AGENT_ROOT = resolveAgentRoot();
 const SCRIPT_AGENT_ROOT = path.join(AGENT_ROOT, "agent", "script-agent");
@@ -22,6 +23,24 @@ const TEMPLATES_DIR = path.join(SCRIPT_AGENT_ROOT, "templates");
 const KNOWLEDGE_DIR = path.join(SCRIPT_AGENT_ROOT, "knowledge");
 const SKILLS_DIR = path.join(SCRIPT_AGENT_ROOT, "skills");
 const KNOWLEDGE_EXCLUDE = new Set(["00_README.md"]);
+const CORE_MANIFEST_PATH = "core/core-manifest.json";
+
+export type SystemPromptCoreMode = "off" | "shadow-preview";
+export type SystemPromptDirectionMode = "stable" | "shadow-preview";
+
+export interface LoadSystemPromptOptions {
+  coreMode?: SystemPromptCoreMode;
+  directionMode?: SystemPromptDirectionMode;
+}
+
+interface CoreManifestModule {
+  id?: string;
+  path?: string;
+}
+
+interface CoreManifest {
+  modules?: CoreManifestModule[];
+}
 
 function scriptAgentFile(relPath: string): string {
   return `agent/script-agent/${relPath}`;
@@ -88,13 +107,67 @@ function readSkills(): string {
   }
 }
 
-let cached: string | null = null;
+const systemPromptCache = new Map<string, string>();
 let planningCached: string | null = null;
 let adaptationAnalyzeCached: string | null = null;
 let adaptationDiscussCached: string | null = null;
 let adaptationPlannerCached: string | null = null;
 let seriesBibleGeneratorCached: string | null = null;
 let prefillMetaCached: string | null = null;
+
+function readDirectionPrompts(creativeDirectionId?: string | null): string {
+  const direction = getCreativeDirection(creativeDirectionId);
+  return direction.promptFiles
+    .map((relPath) => {
+      const content = readFile(relPath);
+      if (!content) return "";
+      return `<!-- direction: ${direction.id}; file: ${scriptAgentFile(relPath)} -->\n${content}`;
+    })
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function readDirectionShadowPrompts(creativeDirectionId?: string | null): string {
+  const direction = getCreativeDirection(creativeDirectionId);
+  return (direction.migrationShadowPromptFiles ?? [])
+    .map((relPath) => {
+      const content = readFile(relPath);
+      if (!content) return "";
+      return `<!-- direction-shadow: ${direction.id}; file: ${scriptAgentFile(relPath)} -->\n${content}`;
+    })
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function readCoreManifest(): CoreManifest | null {
+  const raw = readFile(CORE_MANIFEST_PATH);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as CoreManifest;
+    return parsed && Array.isArray(parsed.modules) ? parsed : null;
+  } catch {
+    console.warn(`[prompt-loader] invalid core manifest JSON: ${scriptAgentFile(CORE_MANIFEST_PATH)}`);
+    return null;
+  }
+}
+
+function readCoreShadowPrompts(): string {
+  const manifest = readCoreManifest();
+  if (!manifest) return "";
+  const modules = manifest.modules ?? [];
+
+  return modules
+    .map((mod) => {
+      const id = mod.id?.trim();
+      const relPath = mod.path?.trim();
+      if (!id || !relPath) return "";
+      const content = readFile(relPath);
+      if (!content) return "";
+      return `<!-- core-shadow: ${id}; file: ${scriptAgentFile(relPath)} -->\n${content}`;
+    })
+    .filter(Boolean)
+    .join("\n\n");
+}
 
 /** 策划会话专用：轻量系统提示，不含全量 knowledge/templates */
 export function loadPlanningSessionPrompt(): string {
@@ -152,7 +225,18 @@ export function loadPrefillMetaPrompt(): string {
   return prefillMetaCached;
 }
 
-export function loadSystemPrompt(): string {
+export function loadSystemPrompt(
+  creativeDirectionId?: string | null,
+  options?: LoadSystemPromptOptions
+): string {
+  const normalizedDirectionId = normalizeCreativeDirectionId(creativeDirectionId);
+  const coreMode = options?.coreMode ?? "off";
+  const directionMode = options?.directionMode ?? "stable";
+  const cacheKey =
+    coreMode === "off" && directionMode === "stable"
+      ? normalizedDirectionId
+      : `${normalizedDirectionId}:core=${coreMode}:direction=${directionMode}`;
+  const cached = systemPromptCache.get(cacheKey);
   if (cached) return cached;
 
   const parts: string[] = [];
@@ -161,6 +245,25 @@ export function loadSystemPrompt(): string {
     const content = readFile(rel);
     if (content) {
       parts.push(`<!-- file: ${scriptAgentFile(rel)} -->\n${content}`);
+    }
+  }
+
+  if (coreMode === "shadow-preview") {
+    const coreShadowPrompts = readCoreShadowPrompts();
+    if (coreShadowPrompts) {
+      parts.push(coreShadowPrompts);
+    }
+  }
+
+  const directionPrompts = readDirectionPrompts(normalizedDirectionId);
+  if (directionPrompts) {
+    parts.push(directionPrompts);
+  }
+
+  if (directionMode === "shadow-preview") {
+    const directionShadowPrompts = readDirectionShadowPrompts(normalizedDirectionId);
+    if (directionShadowPrompts) {
+      parts.push(directionShadowPrompts);
     }
   }
 
@@ -179,6 +282,7 @@ export function loadSystemPrompt(): string {
     parts.push(templates);
   }
 
-  cached = parts.join("\n\n");
-  return cached;
+  const joined = parts.join("\n\n");
+  systemPromptCache.set(cacheKey, joined);
+  return joined;
 }

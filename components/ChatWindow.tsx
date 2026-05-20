@@ -27,6 +27,7 @@ interface Props {
   settings: Settings;
   messages: Message[];
   projectId: string | null;
+  creativeDirectionId?: string;
   /** 工程侧状态摘要，注入系统提示 */
   projectContext?: string;
   onOpenSettings: () => void;
@@ -43,6 +44,7 @@ const ChatWindow = forwardRef<ChatWindowHandle, Props>(function ChatWindow(
     settings,
     messages,
     projectId,
+    creativeDirectionId,
     projectContext,
     onOpenSettings,
     onMessagesChange,
@@ -100,6 +102,7 @@ const ChatWindow = forwardRef<ChatWindowHandle, Props>(function ChatWindow(
           body: JSON.stringify({
             messages: newMessages,
             settings,
+            creativeDirectionId,
             projectContext: projectContext?.trim() || undefined,
           }),
         });
@@ -161,7 +164,7 @@ const ChatWindow = forwardRef<ChatWindowHandle, Props>(function ChatWindow(
         setIsLoading(false);
       }
     },
-    [settings, projectId, projectContext, onMessagesChange, onAssistantDone, onOpenSettings]
+    [settings, projectId, creativeDirectionId, projectContext, onMessagesChange, onAssistantDone, onOpenSettings]
   );
 
   useImperativeHandle(

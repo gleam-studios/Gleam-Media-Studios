@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { nanoid } from "nanoid";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { listProjects, saveProject } from "@/lib/db/project-store";
+import { DEFAULT_CREATIVE_DIRECTION_ID } from "@/lib/creative-directions";
 import type { Project, ProjectMeta } from "@/lib/types";
 
 const emptyMeta = (): ProjectMeta => ({
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
     name,
     createdAt: now,
     updatedAt: now,
+    creativeDirectionId: DEFAULT_CREATIVE_DIRECTION_ID,
     currentStage: 0,
     messages: [],
     artifacts: [],

@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { deleteProject, getProject, saveProject } from "@/lib/db/project-store";
+import {
+  ensureProjectCreativeDirection,
+  isCreativeDirectionLocked,
+  normalizeCreativeDirectionId,
+} from "@/lib/creative-directions";
 import type { Project } from "@/lib/types";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -38,9 +43,24 @@ export async function PUT(req: NextRequest, ctx: RouteContext) {
   }
 
   const updates = (await req.json()) as Record<string, unknown>;
+  if (Object.prototype.hasOwnProperty.call(updates, "creativeDirectionId")) {
+    const currentDirectionId = normalizeCreativeDirectionId(existing.creativeDirectionId);
+    const requestedDirectionId = normalizeCreativeDirectionId(
+      typeof updates.creativeDirectionId === "string" ? updates.creativeDirectionId : undefined,
+    );
+    if (requestedDirectionId !== currentDirectionId && isCreativeDirectionLocked(existing)) {
+      return Response.json(
+        { error: "创作方向已锁定：项目已有确认书、系列圣经、对话或产物，不能直接切换方向。" },
+        { status: 409 },
+      );
+    }
+    updates.creativeDirectionId = requestedDirectionId;
+  }
+
   const merged = { ...existing, ...updates, id: existing.id } as Record<string, unknown>;
   delete merged.snapshots;
   const project = merged as unknown as Project;
+  ensureProjectCreativeDirection(project);
   await saveProject(supabase, project);
   return Response.json(project);
 }

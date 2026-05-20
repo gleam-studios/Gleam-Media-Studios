@@ -1,0 +1,11 @@
+{
+  "id": "script-agent",
+  "label": "Gleam Media Studios Script Agent",
+  "defaultCreativeDirectionId": "bl-short-drama",
+  "directions": [
+    {
+      "id": "bl-short-drama",
+      "configPath": "directions/bl-short-drama/direction.json"
+    }
+  ]
+}
