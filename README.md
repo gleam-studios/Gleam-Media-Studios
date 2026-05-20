@@ -269,7 +269,7 @@ uvicorn main:app --host 0.0.0.0 --port 8765
 
 **Gleam Media Studios, Inc.** 专注于流媒体与系列化影视向的内容工业化工具。本平台将团队在立项、编剧、视觉前期中沉淀的 **阶段 Gate、提示词模版与视觉资产规范** 固化进可部署的产品，供内部团队与合作伙伴在统一界面中协作。
 
-- **上游仓库**：[github.com/gleam-studios/script--agent](https://github.com/gleam-studios/script--agent)  
+- **上游仓库**：[github.com/gleam-studios/Gleam-Media-Studios](https://github.com/gleam-studios/Gleam-Media-Studios)  
 - **问题与贡献**：请通过 GitHub Issues / Pull Request 与维护者沟通。  
 - **许可证**：二次开发或企业部署请自行补充许可证策略；第三方依赖以各自 `package.json` 许可证为准。
 
