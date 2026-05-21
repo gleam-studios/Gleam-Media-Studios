@@ -17,6 +17,7 @@ import {
   type GptImageQuality,
   type ImageAspectRatio,
   type ImageGalleryRecord,
+  type ImageGalleryReferenceImage,
   type ImageModelId,
   type ImageSizeTier,
 } from "@/lib/image-workspace";
@@ -44,11 +45,49 @@ function normalizeRefSlots(slots: Array<RefSlot | null | undefined>): RefSlot[] 
 }
 
 function revokeRefPreview(slot: RefSlot | null) {
-  if (slot?.previewUrl) URL.revokeObjectURL(slot.previewUrl);
+  if (slot?.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(slot.previewUrl);
 }
 
 function refSlotFromFile(file: File): NonNullable<RefSlot> {
   return { file, previewUrl: URL.createObjectURL(file) };
+}
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") resolve(reader.result);
+      else reject(new Error("参考图读取失败"));
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("参考图读取失败"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function dataUrlToFile(dataUrl: string, name: string, type: string): File {
+  const [header, body = ""] = dataUrl.split(",");
+  const mime = header.match(/^data:([^;]+);base64$/)?.[1] || type || "image/png";
+  const binary = atob(body);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new File([bytes], name || "reference.png", { type: mime });
+}
+
+async function snapshotReferenceImages(slots: RefSlot[]): Promise<ImageGalleryReferenceImage[]> {
+  const entries = await Promise.all(
+    slots.map(async (slot, slotIndex): Promise<ImageGalleryReferenceImage | null> => {
+      if (!slot?.file) return null;
+      return {
+        slotIndex,
+        dataUrl: await fileToDataUrl(slot.file),
+        name: slot.file.name,
+        type: slot.file.type,
+      };
+    }),
+  );
+  return entries.filter((entry): entry is ImageGalleryReferenceImage => entry !== null);
 }
 
 /** 原生 select 的固有宽度往往按「最宽的 option」计算，短文案也会显得很空；按当前选中项测宽收紧 pill。 */
@@ -142,6 +181,8 @@ export default function ImagePage() {
   const [refSlots, setRefSlots] = useState<RefSlot[]>(createEmptyRefSlots);
   const [resultUrl, setResultUrl] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [promptPreviewOpen, setPromptPreviewOpen] = useState(false);
+  const [promptCopied, setPromptCopied] = useState(false);
   const [portalMounted, setPortalMounted] = useState(false);
   const [error, setError] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -160,13 +201,18 @@ export default function ImagePage() {
   }, []);
 
   useEffect(() => {
-    if (!previewOpen) return;
+    if (!previewOpen && !promptPreviewOpen) return;
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") setPreviewOpen(false);
+      if (e.key === "Escape") setPromptPreviewOpen(false);
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [previewOpen]);
+  }, [previewOpen, promptPreviewOpen]);
+
+  useEffect(() => {
+    if (!promptPreviewOpen) setPromptCopied(false);
+  }, [promptPreviewOpen]);
 
   useEffect(() => {
     if (!previewOpen) return;
@@ -265,6 +311,26 @@ export default function ImagePage() {
     });
   }
 
+  async function copyPromptToClipboard() {
+    const text = finalPrompt || "";
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "true");
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      textarea.style.top = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
+    }
+    setPromptCopied(true);
+    window.setTimeout(() => setPromptCopied(false), 1500);
+  }
+
   useEffect(() => {
     const el = historyScrollRef.current;
     if (!el || sidebarHistoryRecords.length === 0) return;
@@ -332,11 +398,30 @@ export default function ImagePage() {
     });
   }
 
+  function restoreReferenceImagesFromRecord(record: ImageGalleryRecord) {
+    if (!record.referenceImages) return;
+    setRefSlots((prev) => {
+      for (const slot of prev) revokeRefPreview(slot);
+      const next = createEmptyRefSlots();
+      for (const image of record.referenceImages ?? []) {
+        if (image.slotIndex < 0 || image.slotIndex >= next.length || !image.dataUrl) continue;
+        const type = image.type || image.dataUrl.match(/^data:([^;]+);base64,/)?.[1] || "image/png";
+        const file = dataUrlToFile(image.dataUrl, image.name || `reference-${image.slotIndex + 1}.png`, type);
+        next[image.slotIndex] = {
+          file,
+          previewUrl: image.dataUrl,
+        };
+      }
+      return next;
+    });
+  }
+
   async function writeRecord(
     status: "success" | "error",
     imageUrl?: string,
     message?: string,
     promptSnapshot?: string,
+    referenceImages?: ImageGalleryReferenceImage[],
   ) {
     const resolvedPrompt = promptSnapshot ?? finalPrompt;
     const record: ImageGalleryRecord = {
@@ -354,7 +439,8 @@ export default function ImagePage() {
       imageSize,
       gptImageQuality: selectedModel.provider === "gpt-image" ? settings.gptImageQuality : undefined,
       imageUrl,
-      refImageCount: filledRefFileCount,
+      refImageCount: referenceImages?.length ?? filledRefFileCount,
+      referenceImages,
       status,
       error: message,
     };
@@ -394,7 +480,10 @@ export default function ImagePage() {
     }
 
     setIsGenerating(true);
+    let referenceImages: ImageGalleryReferenceImage[] = [];
     try {
+      const refSlotsSnapshot = normalizeRefSlots(refSlots);
+      referenceImages = await snapshotReferenceImages(refSlotsSnapshot);
       const fd = new FormData();
       fd.append(
         "meta",
@@ -406,7 +495,7 @@ export default function ImagePage() {
           gptImageQuality: liveModel.provider === "gpt-image" ? liveSettings.gptImageQuality : undefined,
         }),
       );
-      for (const slot of refSlots) {
+      for (const slot of refSlotsSnapshot) {
         if (slot?.file) fd.append("ref", slot.file, slot.file.name || "reference.png");
       }
 
@@ -420,7 +509,7 @@ export default function ImagePage() {
       if (!imageUrl) throw new Error(typeof data.error === "string" && data.error ? data.error : "服务器未返回图片地址");
       setResultUrl(imageUrl);
       try {
-        void writeRecord("success", imageUrl, undefined, promptForRequest);
+        void writeRecord("success", imageUrl, undefined, promptForRequest, referenceImages);
       } catch (persistErr) {
         console.warn("本地画廊写入失败（多与浏览器存储配额有关）:", persistErr);
       }
@@ -428,7 +517,7 @@ export default function ImagePage() {
       const message = e instanceof Error ? e.message : "生图失败";
       setError(message);
       try {
-        void writeRecord("error", undefined, message);
+        void writeRecord("error", undefined, message, promptForRequest, referenceImages);
       } catch (persistErr) {
         console.warn("写入失败记录到本地画廊时出错:", persistErr);
       }
@@ -579,6 +668,7 @@ export default function ImagePage() {
                                   return next;
                                 });
                               }
+                              restoreReferenceImagesFromRecord(record);
                             }}
                             className={styles.historyItem}
                           >
@@ -742,6 +832,13 @@ export default function ImagePage() {
               ) : null}
 
               {!modelReady ? <span className={styles.warning}>当前模型未配置</span> : null}
+              <button
+                type="button"
+                onClick={() => setPromptPreviewOpen(true)}
+                className={styles.viewPrompt}
+              >
+                查看提示词
+              </button>
               <button type="button" onClick={handleGenerate} disabled={isGenerating} className={styles.generate} title="生成">
                 {isGenerating ? "生成中" : "生成"}
               </button>
@@ -770,6 +867,47 @@ export default function ImagePage() {
               >
                 ×
               </button>
+            </div>,
+            document.body,
+          )
+        : null}
+      {portalMounted && promptPreviewOpen
+        ? createPortal(
+            <div className={styles.promptPreviewRoot} role="dialog" aria-modal="true" aria-label="查看提示词">
+              <button
+                type="button"
+                className={styles.promptPreviewBackdrop}
+                onClick={() => setPromptPreviewOpen(false)}
+                aria-label="关闭提示词窗口"
+              />
+              <section className={styles.promptPreviewPanel}>
+                <header className={styles.promptPreviewHead}>
+                  <div>
+                    <p className={styles.promptPreviewEyebrow}>当前模式提示词</p>
+                    <h2 className={styles.promptPreviewTitle}>
+                      {modes.find((m) => m.id === selectedModeId)?.label ?? selectedModeId}
+                    </h2>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.promptPreviewClose}
+                    onClick={() => setPromptPreviewOpen(false)}
+                    aria-label="关闭"
+                  >
+                    ×
+                  </button>
+                </header>
+                <pre className={styles.promptPreviewText}>{finalPrompt || "（当前提示词为空）"}</pre>
+                <footer className={styles.promptPreviewActions}>
+                  <button
+                    type="button"
+                    className={styles.promptCopyButton}
+                    onClick={() => void copyPromptToClipboard()}
+                  >
+                    {promptCopied ? "已复制" : "复制全部"}
+                  </button>
+                </footer>
+              </section>
             </div>,
             document.body,
           )

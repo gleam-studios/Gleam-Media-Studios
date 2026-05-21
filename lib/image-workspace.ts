@@ -162,8 +162,20 @@ export interface ImageGalleryRecord {
   gptImageQuality?: GptImageQuality;
   imageUrl?: string;
   refImageCount: number;
+  /**
+   * 生成当时的参考图快照。按槽位保存，便于从右侧历史记录一键恢复输入状态。
+   * 旧记录可能只有 refImageCount，没有本字段。
+   */
+  referenceImages?: ImageGalleryReferenceImage[];
   status: ImageGenerationStatus;
   error?: string;
+}
+
+export interface ImageGalleryReferenceImage {
+  slotIndex: number;
+  dataUrl: string;
+  name?: string;
+  type?: string;
 }
 
 export const IMAGE_MODEL_ORDER: ImageModelId[] = ["gpt-image-2", "nano-banana-2", "nano-banana-pro"];
