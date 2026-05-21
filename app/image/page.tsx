@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { createPortal } from "react-dom";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   buildImagePromptFromSlots,
   composerSlotCountForTemplate,
@@ -33,8 +33,27 @@ import styles from "./image-page.module.css";
 
 const ASPECT_RATIOS: ImageAspectRatio[] = ["auto", "1:1", "2:3", "3:2", "3:4", "4:3", "9:16", "16:9", "21:9"];
 const IMAGE_SIZES: ImageSizeTier[] = ["1K", "2K", "4K"];
+const IMAGE_GENERATION_RUNTIME_STORAGE_KEY = "script-agent-image-generation-runtime-v1";
+const IMAGE_GENERATION_RUNTIME_EVENT = "script-agent-image-generation-runtime-change";
+const IMAGE_REFERENCE_CACHE_STORAGE_KEY = "script-agent-image-reference-cache-v1";
 
 type RefSlot = { previewUrl: string; file: File } | null;
+type ImageGenerationRuntimeState = {
+  taskId: string;
+  status: "running" | "success" | "error";
+  startedAt: string;
+  updatedAt: string;
+  modeId: string;
+  modelId: ImageModelId;
+  aspectRatio: ImageAspectRatio;
+  imageSize: ImageSizeTier;
+  gptImageQuality?: GptImageQuality;
+  slotInputs: string[];
+  finalPrompt: string;
+  referenceImages: ImageGalleryReferenceImage[];
+  imageUrl?: string;
+  error?: string;
+};
 
 function createEmptyRefSlots(): RefSlot[] {
   return Array.from({ length: IMAGE_REF_SLOT_COUNT }, () => null);
@@ -88,6 +107,71 @@ async function snapshotReferenceImages(slots: RefSlot[]): Promise<ImageGalleryRe
     }),
   );
   return entries.filter((entry): entry is ImageGalleryReferenceImage => entry !== null);
+}
+
+function readGenerationRuntimeState(): ImageGenerationRuntimeState | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(IMAGE_GENERATION_RUNTIME_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<ImageGenerationRuntimeState>;
+    if (!parsed.taskId || !parsed.status || !parsed.startedAt) return null;
+    if (parsed.status !== "running" && parsed.status !== "success" && parsed.status !== "error") return null;
+    if (parsed.modelId !== "gpt-image-2" && parsed.modelId !== "nano-banana-2" && parsed.modelId !== "nano-banana-pro") {
+      return null;
+    }
+    return {
+      taskId: parsed.taskId,
+      status: parsed.status,
+      startedAt: parsed.startedAt,
+      updatedAt: parsed.updatedAt || parsed.startedAt,
+      modeId: String(parsed.modeId || "real-character-asset"),
+      modelId: parsed.modelId,
+      aspectRatio: parsed.aspectRatio || "4:3",
+      imageSize: parsed.imageSize || "1K",
+      gptImageQuality: parsed.gptImageQuality,
+      slotInputs: Array.isArray(parsed.slotInputs) ? parsed.slotInputs.map((x) => String(x ?? "")) : [""],
+      finalPrompt: String(parsed.finalPrompt || ""),
+      referenceImages: Array.isArray(parsed.referenceImages) ? parsed.referenceImages : [],
+      imageUrl: typeof parsed.imageUrl === "string" ? parsed.imageUrl : undefined,
+      error: typeof parsed.error === "string" ? parsed.error : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeGenerationRuntimeState(next: ImageGenerationRuntimeState) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(IMAGE_GENERATION_RUNTIME_STORAGE_KEY, JSON.stringify(next));
+  window.dispatchEvent(new CustomEvent<ImageGenerationRuntimeState>(IMAGE_GENERATION_RUNTIME_EVENT, { detail: next }));
+}
+
+function readReferenceImageCache(): Record<string, ImageGalleryReferenceImage[]> {
+  if (typeof window === "undefined") return {};
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(IMAGE_REFERENCE_CACHE_STORAGE_KEY) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveReferenceImagesForRecord(recordId: string, referenceImages: ImageGalleryReferenceImage[]) {
+  if (typeof window === "undefined" || referenceImages.length === 0) return;
+  const cache = readReferenceImageCache();
+  cache[recordId] = referenceImages;
+  const entries = Object.entries(cache).slice(-80);
+  window.localStorage.setItem(IMAGE_REFERENCE_CACHE_STORAGE_KEY, JSON.stringify(Object.fromEntries(entries)));
+}
+
+function mergeCachedReferenceImages(records: ImageGalleryRecord[]): ImageGalleryRecord[] {
+  const cache = readReferenceImageCache();
+  return records.map((record) => {
+    if (record.referenceImages?.length) return record;
+    const cached = cache[record.id];
+    return cached?.length ? { ...record, referenceImages: cached } : record;
+  });
 }
 
 /** 原生 select 的固有宽度往往按「最宽的 option」计算，短文案也会显得很空；按当前选中项测宽收紧 pill。 */
@@ -188,10 +272,13 @@ export default function ImagePage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const historyScrollRef = useRef<HTMLDivElement>(null);
   const refSlotsRef = useRef<RefSlot[]>(refSlots);
+  const mountedRef = useRef(false);
   refSlotsRef.current = refSlots;
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
       for (const s of refSlotsRef.current) revokeRefPreview(s);
     };
   }, []);
@@ -250,7 +337,7 @@ export default function ImagePage() {
     async function refreshGallery() {
       try {
         const records = await fetchGalleryRecords();
-        setRecords(records);
+        setRecords(mergeCachedReferenceImages(records));
       } catch (e) {
         console.warn("[image] gallery load failed", e);
       }
@@ -398,12 +485,12 @@ export default function ImagePage() {
     });
   }
 
-  function restoreReferenceImagesFromRecord(record: ImageGalleryRecord) {
-    if (!record.referenceImages) return;
+  const restoreReferenceImages = useCallback((referenceImages: ImageGalleryReferenceImage[] | undefined) => {
+    if (!referenceImages) return;
     setRefSlots((prev) => {
       for (const slot of prev) revokeRefPreview(slot);
       const next = createEmptyRefSlots();
-      for (const image of record.referenceImages ?? []) {
+      for (const image of referenceImages) {
         if (image.slotIndex < 0 || image.slotIndex >= next.length || !image.dataUrl) continue;
         const type = image.type || image.dataUrl.match(/^data:([^;]+);base64,/)?.[1] || "image/png";
         const file = dataUrlToFile(image.dataUrl, image.name || `reference-${image.slotIndex + 1}.png`, type);
@@ -414,7 +501,54 @@ export default function ImagePage() {
       }
       return next;
     });
+  }, []);
+
+  function restoreReferenceImagesFromRecord(record: ImageGalleryRecord) {
+    restoreReferenceImages(record.referenceImages);
   }
+
+  const applyGenerationRuntimeState = useCallback((state: ImageGenerationRuntimeState | null) => {
+    if (!state) return;
+    setSelectedModelId(state.modelId);
+    setSelectedModeId(state.modeId);
+    setAspectRatio(state.aspectRatio);
+    setImageSize(state.imageSize);
+    const tpl = settings.prompts[state.modeId] ?? "";
+    const n = composerSlotCountForTemplate(tpl, state.modeId);
+    setSlotInputs(normalizeSlotInputsToLength(state.slotInputs, n));
+    restoreReferenceImages(state.referenceImages);
+    setIsGenerating(state.status === "running");
+    if (state.status === "success") {
+      setResultUrl(state.imageUrl || "");
+      setError("");
+    } else if (state.status === "error") {
+      setError(state.error || "生图失败");
+    }
+    if (state.gptImageQuality) {
+      setSettings((prev) => ({ ...prev, gptImageQuality: state.gptImageQuality! }));
+    }
+  }, [restoreReferenceImages, settings.prompts]);
+
+  useEffect(() => {
+    if (!workspaceReady) return;
+    applyGenerationRuntimeState(readGenerationRuntimeState());
+
+    function onRuntimeChange(e: Event) {
+      const detail = e instanceof CustomEvent ? (e.detail as ImageGenerationRuntimeState | undefined) : undefined;
+      applyGenerationRuntimeState(detail ?? readGenerationRuntimeState());
+    }
+
+    function onVisible() {
+      if (document.visibilityState === "visible") applyGenerationRuntimeState(readGenerationRuntimeState());
+    }
+
+    window.addEventListener(IMAGE_GENERATION_RUNTIME_EVENT, onRuntimeChange);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener(IMAGE_GENERATION_RUNTIME_EVENT, onRuntimeChange);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [workspaceReady, applyGenerationRuntimeState]);
 
   async function writeRecord(
     status: "success" | "error",
@@ -444,13 +578,16 @@ export default function ImagePage() {
       status,
       error: message,
     };
+    saveReferenceImagesForRecord(record.id, referenceImages ?? []);
+    const remoteRecord = { ...record, referenceImages: undefined };
     try {
-      const next = await prependGalleryRecordApi(record);
-      setRecords(next);
+      const next = await prependGalleryRecordApi(remoteRecord);
+      if (mountedRef.current) setRecords(mergeCachedReferenceImages(next));
     } catch (e) {
       console.warn("[image] gallery save failed", e);
-      setRecords((prev) => [record, ...prev]);
+      if (mountedRef.current) setRecords((prev) => [record, ...prev]);
     }
+    return record;
   }
 
   async function handleGenerate() {
@@ -481,9 +618,25 @@ export default function ImagePage() {
 
     setIsGenerating(true);
     let referenceImages: ImageGalleryReferenceImage[] = [];
+    let runtimeState: ImageGenerationRuntimeState | null = null;
     try {
       const refSlotsSnapshot = normalizeRefSlots(refSlots);
       referenceImages = await snapshotReferenceImages(refSlotsSnapshot);
+      runtimeState = {
+        taskId: crypto.randomUUID(),
+        status: "running",
+        startedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        modeId: selectedModeId,
+        modelId: selectedModelId,
+        aspectRatio,
+        imageSize,
+        gptImageQuality: liveModel.provider === "gpt-image" ? liveSettings.gptImageQuality : undefined,
+        slotInputs: [...slotInputs],
+        finalPrompt: promptForRequest,
+        referenceImages,
+      };
+      writeGenerationRuntimeState(runtimeState);
       const fd = new FormData();
       fd.append(
         "meta",
@@ -507,7 +660,16 @@ export default function ImagePage() {
       if (!res.ok) throw new Error(data.error || "生图失败");
       const imageUrl = typeof data.imageUrl === "string" ? data.imageUrl.trim() : "";
       if (!imageUrl) throw new Error(typeof data.error === "string" && data.error ? data.error : "服务器未返回图片地址");
-      setResultUrl(imageUrl);
+      if (runtimeState) {
+        writeGenerationRuntimeState({
+          ...runtimeState,
+          status: "success",
+          updatedAt: new Date().toISOString(),
+          imageUrl,
+          error: undefined,
+        });
+      }
+      if (mountedRef.current) setResultUrl(imageUrl);
       try {
         void writeRecord("success", imageUrl, undefined, promptForRequest, referenceImages);
       } catch (persistErr) {
@@ -515,14 +677,22 @@ export default function ImagePage() {
       }
     } catch (e) {
       const message = e instanceof Error ? e.message : "生图失败";
-      setError(message);
+      if (runtimeState) {
+        writeGenerationRuntimeState({
+          ...runtimeState,
+          status: "error",
+          updatedAt: new Date().toISOString(),
+          error: message,
+        });
+      }
+      if (mountedRef.current) setError(message);
       try {
         void writeRecord("error", undefined, message, promptForRequest, referenceImages);
       } catch (persistErr) {
         console.warn("写入失败记录到本地画廊时出错:", persistErr);
       }
     } finally {
-      setIsGenerating(false);
+      if (mountedRef.current) setIsGenerating(false);
     }
   }
 

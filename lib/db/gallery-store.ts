@@ -1,15 +1,26 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ImageGalleryRecord } from "@/lib/image-workspace";
 
-export async function listGalleryRecords(supabase: SupabaseClient): Promise<ImageGalleryRecord[]> {
+const DEFAULT_GALLERY_RECORD_LIMIT = 24;
+
+function withoutInlineReferenceImages(record: ImageGalleryRecord): ImageGalleryRecord {
+  if (!record.referenceImages) return record;
+  return { ...record, referenceImages: undefined };
+}
+
+export async function listGalleryRecords(
+  supabase: SupabaseClient,
+  limit = DEFAULT_GALLERY_RECORD_LIMIT,
+): Promise<ImageGalleryRecord[]> {
   const { data, error } = await supabase
     .from("image_gallery_records")
     .select("data, created_at")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(limit);
 
   if (error) throw error;
 
-  return (data ?? []).map((row) => row.data as ImageGalleryRecord);
+  return (data ?? []).map((row) => withoutInlineReferenceImages(row.data as ImageGalleryRecord));
 }
 
 export async function replaceGalleryRecords(
@@ -32,7 +43,7 @@ export async function replaceGalleryRecords(
   const rows = records.map((record) => ({
     id: record.id,
     user_id: user.id,
-    data: record,
+    data: withoutInlineReferenceImages(record),
     created_at: record.createdAt,
   }));
 
@@ -52,12 +63,13 @@ export async function prependGalleryRecord(
   const { error } = await supabase.from("image_gallery_records").insert({
     id: record.id,
     user_id: user.id,
-    data: record,
+    data: withoutInlineReferenceImages(record),
     created_at: record.createdAt,
   });
 
   if (error) throw error;
-  return listGalleryRecords(supabase);
+  const existing = await listGalleryRecords(supabase, DEFAULT_GALLERY_RECORD_LIMIT - 1);
+  return [withoutInlineReferenceImages(record), ...existing.filter((item) => item.id !== record.id)];
 }
 
 export async function importGalleryRecords(
@@ -83,7 +95,7 @@ export async function importGalleryForUser(
   const rows = records.map((record) => ({
     id: record.id,
     user_id: userId,
-    data: record,
+    data: withoutInlineReferenceImages(record),
     created_at: record.createdAt,
   }));
 
