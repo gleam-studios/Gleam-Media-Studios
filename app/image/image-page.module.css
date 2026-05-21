@@ -799,7 +799,7 @@
   z-index: 35;
   position: relative;
   width: 100%;
-  max-width: 760px;
+  max-width: 840px;
   margin: 0 auto;
   padding-top: 8px;
 }
@@ -1146,7 +1146,7 @@
   margin-left: auto;
   box-sizing: border-box;
   height: 34px;
-  min-width: 84px;
+  min-width: 78px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 15px;
   background: rgba(255, 255, 255, 0.045);
@@ -1173,7 +1173,7 @@
 .generate {
   box-sizing: border-box;
   height: 34px;
-  min-width: 76px;
+  min-width: 72px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 15px;
   background: #fafafa;
