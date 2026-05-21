@@ -1,7 +1,6 @@
 import type { NextRequest } from "next/server";
 import { extractImageFromUpstreamResponse } from "@/lib/image-generation-response";
 import {
-  normalizeIncomingImageModel,
   type GptImageQuality,
   type ImageAspectRatio,
   type ImageModelSettings,
@@ -155,6 +154,48 @@ function gptImageQualityFromTier(t: ImageSizeTier): "low" | "medium" | "high" {
   if (t === "4K") return "high";
   if (t === "2K") return "medium";
   return "low";
+}
+
+function buildNanoBananaImageConfig(aspectRatio: ImageAspectRatio, imageSize: ImageSizeTier): Record<string, unknown> {
+  return aspectRatio === "auto" ? { imageSize } : { aspectRatio, imageSize };
+}
+
+function buildNanoBananaGenerationConfig(
+  aspectRatio: ImageAspectRatio,
+  imageSize: ImageSizeTier,
+): Record<string, unknown> {
+  const imageConfig = buildNanoBananaImageConfig(aspectRatio, imageSize);
+  return {
+    responseModalities: ["Image"],
+    responseFormat: {
+      image: imageConfig,
+    },
+    imageConfig,
+  };
+}
+
+function buildGrsaiNanoBananaPayload(
+  modelName: string,
+  prompt: string,
+  aspectRatio: ImageAspectRatio,
+  imageSize: ImageSizeTier,
+): Record<string, unknown> {
+  const imageConfig = buildNanoBananaImageConfig(aspectRatio, imageSize);
+  const generationConfig = buildNanoBananaGenerationConfig(aspectRatio, imageSize);
+  return {
+    model: modelName,
+    prompt,
+    /** Grsai draw endpoint legacy fields. */
+    aspectRatio,
+    imageSize,
+    /** Gemini image-generation compatible fields used by newer Nano Banana gateways. */
+    generationConfig,
+    config: generationConfig,
+    responseFormat: {
+      image: imageConfig,
+    },
+    imageConfig,
+  };
 }
 
 function dataUrlToBlob(dataUrl: string): Blob {
@@ -342,10 +383,7 @@ async function generateViaGrsai(
           moderation: GRSAI_GPT_IMAGE_MODERATION,
         }
       : {
-          model: modelName,
-          prompt,
-          aspectRatio,
-          imageSize,
+          ...buildGrsaiNanoBananaPayload(modelName, prompt, aspectRatio, imageSize),
         };
   if (urls.length > 0) body.urls = urls;
 
@@ -552,9 +590,7 @@ async function generateViaChatCompletions(
     messages: [{ role: "user", content: refImages.length ? userContent : prompt }],
   };
   if (useGoogleStyle) {
-    payload.generationConfig = {
-      imageConfig: aspectRatio === "auto" ? { imageSize } : { imageSize, aspectRatio },
-    };
+    payload.generationConfig = buildNanoBananaGenerationConfig(aspectRatio, imageSize);
     payload.safetySettings = [
       { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
       { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
@@ -668,4 +704,4 @@ export async function generateImage(params: GenerateImageParams): Promise<{ imag
   return { imageUrl, payloadKind: route.kind };
 }
 
-export { parseGenerateRequest, type GenerateBody };
+export { buildGrsaiNanoBananaPayload, parseGenerateRequest, type GenerateBody };
