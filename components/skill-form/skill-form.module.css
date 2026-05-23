@@ -1,0 +1,321 @@
+.panel {
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 100%;
+  box-sizing: border-box;
+  padding-bottom: 8px;
+}
+
+.panelHeader {
+  text-align: center;
+  padding: 4px 8px 0;
+}
+
+.panelEyebrow {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #71717a;
+}
+
+.panelTitle {
+  margin: 6px 0 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #fafafa;
+}
+
+.panelMeta {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #a1a1aa;
+}
+
+.panelGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.sectionCard {
+  gap: 16px;
+}
+
+/* ---- RJSF form fields (aligned with shell.field / input / textarea) ---- */
+
+.formWrap :global(.form-group) {
+  margin-bottom: 0;
+}
+
+.formWrap :global(.control-label) {
+  display: block;
+  margin-bottom: 6px;
+  color: #a1a1aa;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.formWrap :global(.field-description) {
+  margin: 0 0 8px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #71717a;
+}
+
+.formWrap :global(input[type="text"]),
+.formWrap :global(textarea),
+.formWrap :global(select) {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  color: #f4f4f5;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.formWrap :global(input[type="text"]:focus),
+.formWrap :global(textarea:focus),
+.formWrap :global(select:focus) {
+  border-color: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.formWrap :global(textarea) {
+  min-height: 112px;
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.formWrap :global(fieldset) {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 4px 0 0;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.formWrap :global(legend) {
+  font-size: 12px;
+  font-weight: 600;
+  color: #d4d4d8;
+  padding: 0 6px;
+}
+
+.formWrap :global(.error-detail) {
+  color: #fca5a5;
+  font-size: 11px;
+  margin-top: 6px;
+}
+
+.formWrap :global(#root) {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.formActions {
+  margin-top: 4px;
+  padding-top: 4px;
+}
+
+.submitBtn {
+  width: 100%;
+  height: 40px;
+  font-size: 13px;
+}
+
+/* ---- Asset uploader ---- */
+
+.assetUploader {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.assetDropHint {
+  padding: 20px 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  text-align: center;
+  font-size: 12px;
+  color: #71717a;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.assetList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.assetRow {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.assetThumb {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.assetFields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.assetRemove {
+  align-self: start;
+  height: 32px;
+  padding: 0 12px;
+}
+
+.assetActions {
+  display: flex;
+  gap: 8px;
+}
+
+.hiddenFile {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .assetRow {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  .assetRemove {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .assetThumb {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+/* ---- Output area ---- */
+
+.outputWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.outputEmpty {
+  padding: 20px 18px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  color: #a1a1aa;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.outputBlock {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.outputBlockHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.outputBlockTitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #e4e4e7;
+}
+
+.outputToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viewSegmented {
+  flex-shrink: 0;
+}
+
+.markdownOutput {
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.markdownSource {
+  margin: 0;
+  max-height: 420px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #e4e4e7;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.rawOutput {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+  color: #e4e4e7;
+}
+
+.imageLink {
+  display: block;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.outputImage {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.downloadLink {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 12px;
+}

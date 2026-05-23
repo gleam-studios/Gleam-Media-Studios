@@ -43,6 +43,11 @@
   padding: 24px 12px;
 }
 
+.messagesForm {
+  padding-top: 4px;
+  padding-bottom: 20px;
+}
+
 .emptyGuide {
   width: 100%;
   max-width: 520px;

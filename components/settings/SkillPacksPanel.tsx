@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import shellStyles from "@/app/shared/shell.module.css";
 import { SkillZipUploader } from "@/components/skill/SkillZipUploader";
-import { skillPackDisplayLabel } from "@/lib/chat/skill-pack";
+import { skillPackDisplayLabel, skillPackHasFormInterface } from "@/lib/chat/skill-pack";
 import type { SkillPackRecord } from "@/lib/chat/types";
 import { MAX_SKILL_ZIP_BYTES } from "@/lib/chat/skill-pack";
 import {
@@ -190,7 +190,9 @@ export function SkillPacksPanel() {
                         <span className={styles.rowTitle}>{skillPackDisplayLabel(p)}</span>
                       )}
                       <span className={styles.rowMeta}>
-                        ZIP：{p.title} · {p.skills.length} 个 skill · {formatImportedAt(p.importedAt)}
+                        ZIP：{p.title} · {p.skills.length} 个 skill ·{" "}
+                        {skillPackHasFormInterface(p) ? "表单模式" : "对话模式"} ·{" "}
+                        {formatImportedAt(p.importedAt)}
                       </span>
                     </div>
                     <div className={styles.rowActions}>

@@ -30,8 +30,12 @@
     "db:push": "npx tsx scripts/push-supabase-migrations.ts"
   },
   "dependencies": {
+    "@rjsf/core": "^6.5.3",
+    "@rjsf/utils": "^6.5.3",
+    "@rjsf/validator-ajv8": "^6.5.3",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.0",
+    "ajv": "^8.20.0",
     "jszip": "^3.10.1",
     "mammoth": "^1.12.0",
     "nanoid": "^5.1.7",

@@ -6,6 +6,7 @@ import { ChatMarkdown } from "@/components/chat/ChatMarkdown";
 import { ChatComposer } from "@/components/chat/ChatComposer";
 import { ChatSessionRail } from "@/components/chat/ChatSessionRail";
 import { ChatSkillRail } from "@/components/chat/ChatSkillRail";
+import { SkillFormPanel } from "@/components/skill-form/SkillFormPanel";
 import { CHAT_MAX_ATTACHMENT_BYTES } from "@/lib/chat/completion";
 import type {
   ChatAttachment,
@@ -13,6 +14,7 @@ import type {
   ChatConversation,
   ChatConversationSummary,
   ChatMessage,
+  SkillFormRunResult,
   SkillPackRecord,
 } from "@/lib/chat/types";
 import {
@@ -24,7 +26,8 @@ import {
   sendChatAgentTurn,
 } from "@/lib/chat-api-client";
 import { buildChatEmptyGuideMarkdown } from "@/lib/chat/chat-empty-guide";
-import { fetchSiteSkillPacks } from "@/lib/skill-packs-api-client";
+import { skillPackHasFormInterface } from "@/lib/chat/skill-pack";
+import { fetchSiteSkillPacks, runSkillFormApi } from "@/lib/skill-packs-api-client";
 import type { ImageModelId } from "@/lib/image-workspace";
 import shellStyles from "@/app/shared/shell.module.css";
 import styles from "./chat-workspace.module.css";
@@ -188,6 +191,8 @@ export function ChatWorkspace() {
   const [selectedImageModelId, setSelectedImageModelId] = useState<ImageModelId>("gpt-image-2");
   const [isSavingSkill, setIsSavingSkill] = useState(false);
   const [isLoadingConversation, setIsLoadingConversation] = useState(false);
+  const [skillRunResult, setSkillRunResult] = useState<SkillFormRunResult | null>(null);
+  const [isRunningSkillForm, setIsRunningSkillForm] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeIdRef = useRef<string | null>(null);
 
@@ -304,11 +309,37 @@ export function ChatWorkspace() {
     ? (conversation?.enabledSkillPackIds?.[0] ?? null)
     : null;
 
+  const selectedPack = useMemo(
+    () => skillPacks.find((p) => p.id === selectedSkillPackId) ?? null,
+    [skillPacks, selectedSkillPackId],
+  );
+  const isFormMode = Boolean(selectedPack && skillPackHasFormInterface(selectedPack));
+
   const emptyGuideMarkdown = useMemo(() => {
     if (!selectedSkillPackId) return buildChatEmptyGuideMarkdown(null);
     const pack = skillPacks.find((p) => p.id === selectedSkillPackId);
     return buildChatEmptyGuideMarkdown(pack);
   }, [selectedSkillPackId, skillPacks]);
+
+  useEffect(() => {
+    setSkillRunResult(null);
+    setError(null);
+  }, [selectedSkillPackId, activeId]);
+
+  const handleSkillFormSubmit = async (payload: unknown) => {
+    if (!selectedPack?.inputSchema || isRunningSkillForm) return;
+    setError(null);
+    setIsRunningSkillForm(true);
+    try {
+      const result = await runSkillFormApi(selectedPack.id, payload, selectedImageModelId);
+      setSkillRunResult(result);
+    } catch (e) {
+      setSkillRunResult(null);
+      setError(e instanceof Error ? e.message : "生成分镜失败");
+    } finally {
+      setIsRunningSkillForm(false);
+    }
+  };
 
   const selectSkillPack = async (packId: string | null) => {
     if (isSavingSkill) return;
@@ -496,8 +527,20 @@ export function ChatWorkspace() {
         }
       />
 
-      <div ref={scrollRef} className={styles.messages}>
-        {isLoadingConversation && activeId && !threadVisible ? (
+      <div ref={scrollRef} className={[styles.messages, isFormMode ? styles.messagesForm : ""].filter(Boolean).join(" ")}>
+        {isFormMode && selectedPack ? (
+          conversationMatchesActive ? (
+            <SkillFormPanel
+              pack={selectedPack}
+              result={skillRunResult}
+              loading={isRunningSkillForm}
+              error={error}
+              onSubmit={(payload) => void handleSkillFormSubmit(payload)}
+            />
+          ) : activeId ? (
+            <p className={styles.sending}>加载会话…</p>
+          ) : null
+        ) : isLoadingConversation && activeId && !threadVisible ? (
           <p className={styles.sending}>加载会话…</p>
         ) : !threadVisible ? null : !conversation?.messages.length ? (
           <div className={styles.emptyState}>
@@ -512,22 +555,24 @@ export function ChatWorkspace() {
             ))}
           </div>
         )}
-        {isSending && threadVisible ? <p className={styles.sending}>思考中…</p> : null}
+        {isSending && threadVisible && !isFormMode ? <p className={styles.sending}>思考中…</p> : null}
       </div>
 
-      <ChatComposer
-        inputText={inputText}
-        onInputTextChange={setInputText}
-        pendingAttachments={pendingAttachments}
-        onAddFiles={addAttachments}
-        onRemoveAttachment={(i) => setPendingAttachments((p) => p.filter((_, j) => j !== i))}
-        isSending={isSending}
-        onSend={handleSend}
-        error={error}
-        imageWorkspace={imageWorkspace}
-        selectedImageModelId={selectedImageModelId}
-        onImageModelChange={handleImageModelChange}
-      />
+      {!isFormMode ? (
+        <ChatComposer
+          inputText={inputText}
+          onInputTextChange={setInputText}
+          pendingAttachments={pendingAttachments}
+          onAddFiles={addAttachments}
+          onRemoveAttachment={(i) => setPendingAttachments((p) => p.filter((_, j) => j !== i))}
+          isSending={isSending}
+          onSend={handleSend}
+          error={error}
+          imageWorkspace={imageWorkspace}
+          selectedImageModelId={selectedImageModelId}
+          onImageModelChange={handleImageModelChange}
+        />
+      ) : null}
 
       <ChatSessionRail
         summaries={summaries}

@@ -1,4 +1,5 @@
-import type { SkillPackRecord } from "@/lib/chat/types";
+import type { ImageModelId } from "@/lib/image-workspace";
+import type { SkillFormRunResult, SkillPackRecord } from "@/lib/chat/types";
 
 async function readApiError(res: Response, fallback: string): Promise<string> {
   const data = (await res.json().catch(() => ({}))) as { error?: string };
@@ -57,4 +58,20 @@ export async function deleteSiteSkillPackApi(id: string): Promise<void> {
     const err = (await res.json().catch(() => ({}))) as { error?: string };
     throw new Error(err.error || "无法删除 Skill 包");
   }
+}
+
+export async function runSkillFormApi(
+  packId: string,
+  payload: unknown,
+  preferredImageModelId?: ImageModelId,
+): Promise<SkillFormRunResult> {
+  const res = await fetch("/api/skills/run", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ packId, payload, preferredImageModelId }),
+  });
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Skill 表单执行失败"));
+  }
+  return (await res.json()) as SkillFormRunResult;
 }
