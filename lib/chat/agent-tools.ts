@@ -8,6 +8,7 @@ import {
   effectiveAgentImageModelId,
   resolveImageModelSettings,
 } from "@/lib/chat/image-model-catalog";
+import { resolveImageSizeFromUserRequest } from "@/lib/chat/image-size-policy";
 import type { ConversationAttachmentEntry } from "@/lib/chat/types";
 import type {
   GptImageQuality,
@@ -22,6 +23,7 @@ export interface AgentToolContext {
   attachmentsById: Record<string, ConversationAttachmentEntry>;
   imageWorkspace: ImageWorkspaceSettings;
   defaultImageModelId: ImageModelId;
+  latestUserText?: string;
   /** 对话生图结果上传到 Storage；未提供时仅返回上游临时地址 */
   supabase?: SupabaseClient;
   userId?: string;
@@ -164,12 +166,16 @@ async function toolGenerateImage(argsJson: string, ctx: AgentToolContext): Promi
   const gptQ = args.image_quality;
   const gptImageQuality: GptImageQuality | undefined =
     gptQ === "auto" || gptQ === "low" || gptQ === "medium" || gptQ === "high" ? gptQ : undefined;
+  const imageSize = resolveImageSizeFromUserRequest({
+    explicit: args.image_size,
+    texts: [ctx.latestUserText, prompt],
+  });
 
   const { imageUrl } = await generateImage({
     model,
     prompt,
     aspectRatio: args.aspect_ratio || "auto",
-    imageSize: args.image_size || "1K",
+    imageSize,
     gptImageQuality,
     refImages,
   });
@@ -194,7 +200,7 @@ async function toolGenerateImage(argsJson: string, ctx: AgentToolContext): Promi
       finalPrompt: prompt,
       userInput: prompt,
       aspectRatio: args.aspect_ratio || "auto",
-      imageSize: args.image_size || "1K",
+      imageSize,
       gptImageQuality,
       imageUrl: mediaUrl,
       refImageCount: rawRefs.length,

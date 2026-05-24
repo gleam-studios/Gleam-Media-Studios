@@ -22,6 +22,7 @@ import {
   buildFallbackGenerateImageArgs,
   detectImageGenerationIntent,
 } from "@/lib/chat/image-intent";
+import { resolveImageSizeFromUserRequest } from "@/lib/chat/image-size-policy";
 import {
   extractLeadingSlashCommand,
   slashCommandRequiresGenerateImage,
@@ -97,6 +98,19 @@ function buildAttachmentCatalogText(attachments: ConversationAttachmentEntry[] |
     .join("\n");
 }
 
+function latestUserPlainText(messages: ChatMessage[]): string {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const msg = messages[i];
+    if (msg.role !== "user") continue;
+    return msg.parts
+      .filter((p): p is { type: "text"; text: string } => p.type === "text")
+      .map((p) => p.text)
+      .join("\n")
+      .trim();
+  }
+  return "";
+}
+
 function buildAgentDecisionSystemText(params: {
   skillBlocks: string[];
   imageWorkspace: ImageWorkspaceSettings;
@@ -116,7 +130,7 @@ function buildAgentDecisionSystemText(params: {
 
 JSON 结构二选一：
 {"action":"reply","reason":"一句话原因"}
-{"action":"generate_image","reason":"一句话原因","generate_image":{"prompt":"完整生图提示词","preset_id":"${params.defaultImageModelId}","aspect_ratio":"auto","image_size":"1K","image_quality":"auto","ref_image_urls":[]}}
+{"action":"generate_image","reason":"一句话原因","generate_image":{"prompt":"完整生图提示词","preset_id":"${params.defaultImageModelId}","aspect_ratio":"auto","image_size":"2K","image_quality":"auto","ref_image_urls":[]}}
 
 决策规则：
 - 用户要求“生成图片 / 生图 / 画图 / 出图 / 做海报 / 画分镜图 / 改图 / 根据上传图片生成或重绘”时，选择 generate_image。
@@ -124,7 +138,9 @@ JSON 结构二选一：
 - 用户只是问怎么做、要提示词、要文字方案、要修改文案，或明确说不要图时，选择 reply。
 - 如果选择 generate_image，prompt 必须是可直接发给作图 API 的完整提示词，不要只复述“帮我生成图片”。
 - 如果用户上传了参考图并要求参考/改图/图生图，把对应附件 id 填到 ref_image_urls；不要填不存在的 id。
-- 未指定参数时使用默认模型：${params.defaultImageModelId}（${params.modelLabel}），aspect_ratio 用 "auto"，image_size 用 "1K"，image_quality 用 "auto"。
+- 分辨率必须按用户要求判断：用户明确说 1K/2K/4K、低清/高清/超清、草稿/快速预览/高质量/最高画质 时，对应填写 image_size。
+- 只有在用户没提清晰度时，才把 image_size 设为 "2K"；不要习惯性写成 "1K"。
+- 未指定参数时使用默认模型：${params.defaultImageModelId}（${params.modelLabel}），aspect_ratio 用 "auto"，image_quality 用 "auto"。
 
 可用生图模型：
 ${models}
@@ -291,11 +307,13 @@ export async function runAgentChatTurn(params: {
 
   const resolvedModelId = effectiveAgentImageModelId(undefined, defaultImageModelId);
   const modelLabel = imageWorkspace.models[resolvedModelId]?.label || resolvedModelId;
+  const latestUserText = latestUserPlainText(conversationMessages);
 
   const toolCtx: AgentToolContext = {
     attachmentsById: buildAttachmentsById(conversationAttachments),
     imageWorkspace,
     defaultImageModelId: resolvedModelId,
+    latestUserText,
     supabase,
     userId,
   };
@@ -326,6 +344,7 @@ export async function runAgentChatTurn(params: {
 
   const runGenerateImage =
     slashWantsImage || decision?.action === "generate_image" || Boolean(imageIntent?.active);
+  const inferredImageSize = resolveImageSizeFromUserRequest({ texts: [latestUserText] });
 
   const systemMsg: ChatMessage = {
     id: `sys-agent-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -345,9 +364,18 @@ export async function runAgentChatTurn(params: {
 
   if (runGenerateImage) {
     const fallbackArgs = buildFallbackGenerateImageArgs(conversationMessages);
+    const baseArgs = slashWantsImage ? fallbackArgs : mergeGeneratedImageArgsWithFallback(decision, fallbackArgs);
+    let finalArgs = baseArgs;
+    try {
+      const parsed = JSON.parse(baseArgs) as Record<string, unknown>;
+      if (!parsed.image_size) parsed.image_size = inferredImageSize;
+      finalArgs = JSON.stringify(parsed);
+    } catch {
+      finalArgs = baseArgs;
+    }
     const resultStr = await executeAgentTool(
       "generate_image",
-      slashWantsImage ? fallbackArgs : mergeGeneratedImageArgsWithFallback(decision, fallbackArgs),
+      finalArgs,
       toolCtx,
     );
     generateOutcome = parseGenerateImageToolJson(resultStr);

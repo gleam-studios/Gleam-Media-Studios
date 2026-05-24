@@ -5,6 +5,7 @@ import { parseAssistantChoice, sendChatCompletionRaw } from "@/lib/chat/completi
 import type { ChatApiConfig, ChatMessage, SkillFormRunResult, SkillPackRecord } from "@/lib/chat/types";
 import { generateImage } from "@/lib/image-generate";
 import { effectiveAgentImageModelId, resolveImageModelSettings } from "@/lib/chat/image-model-catalog";
+import { resolveImageSizeFromUnknownRecord } from "@/lib/chat/image-size-policy";
 import { persistGeneratedImageToStorage } from "@/lib/db/persist-generated-image";
 import { prependGalleryRecord } from "@/lib/db/gallery-store";
 import { getWorkspaceSnapshot } from "@/lib/db/workspace-settings-store";
@@ -91,6 +92,7 @@ export async function runSkillForm(params: {
       ? formPayload.optional_parameters.aspect_ratio
       : undefined,
   );
+  const imageSize = resolveImageSizeFromUnknownRecord(formPayload.optional_parameters, "2K");
   const refImages = formPayload.provided_assets.map((a) => a.asset_url).filter(Boolean);
 
   const masterPrompt = await generateMasterPrompt(
@@ -105,6 +107,7 @@ export async function runSkillForm(params: {
     model,
     prompt: masterPrompt,
     aspectRatio,
+    imageSize,
     refImages,
   });
 
@@ -125,7 +128,7 @@ export async function runSkillForm(params: {
     finalPrompt: masterPrompt,
     userInput: formPayload.story_request?.story_framework ?? "",
     aspectRatio,
-    imageSize: "2K",
+    imageSize,
     imageUrl: generatedImageUrl,
     refImageCount: refImages.length,
     status: "success",
